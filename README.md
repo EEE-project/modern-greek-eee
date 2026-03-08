@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="EEE-project.png" alt="EEE Project Logo" width="200"/>
+</p>
+
 # Ελληνικά Εκπαιδευτικά Εργαλεία (EEE) -- Greek Language Educational Tools
 
 A collection of interactive **Marimo** notebooks designed to help students practice Modern Greek grammar, specifically noun declensions and verb inflections.
@@ -18,8 +22,8 @@ A collection of interactive **Marimo** notebooks designed to help students pract
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://codeberg.org/sadov/EEE.git
-    cd EEE
+    git clone https://codeberg.org/sadov/modern-greek-eee.git
+    cd modern-greek-eee
     ```
 
 2.  **Install dependencies**:

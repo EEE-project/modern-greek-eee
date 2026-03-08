@@ -3,7 +3,7 @@
 # dependencies = [
 #     "marimo>=0.19.4",
 #     "mcp==1.25.0",
-#     "modern-greek-eee @ git+https://github.com/sadov/EEE.git",
+#     "modern-greek-eee @ git+https://github.com/EEE-project/modern-greek-eee.git",
 #     "modern-greek-inflexion==2.0.7",
 #     "pandas==2.3.3",
 # ]
