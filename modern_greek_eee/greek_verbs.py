@@ -250,7 +250,7 @@ def _():
             "title": "Новогреческий — Спряжение глаголов",
             "description": "Попрактикуйте спряжение глаголов в различных временах.",
             "select_hint": "Выберите один или несколько времен для практики: Present, Imperfect, Aorist, Simple Future, Continuous Future или Simple Subjunctive.",
-            "use_csv": "Используйте образец набора слов или загрузите TAB-разделенный CSV-файл со столбцами \"Word\" и \"Translation\".",
+            "use_csv": "Используйте образец набора слов или загрузите CSV-файл с табуляцией в качестве разделителя со столбцами \"Word\" и \"Translation\".",
             "file_upload": "Загрузить CSV",
             "select_tenses": "Выберите времена:",
             "practice_heading": "## Практика: Спряжение глаголов",
