@@ -1,0 +1,16 @@
+<script>
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SET_THEME') {
+    document.body.classList.remove('dark', 'dark-theme', 'light', 'light-theme');
+    if (event.data.theme === 'dark') {
+      document.body.classList.add('dark', 'dark-theme');
+    } else {
+      document.body.classList.add('light', 'light-theme');
+    }
+  }
+});
+
+if (window.parent !== window) {
+  window.parent.postMessage({ type: 'GET_THEME' }, '*');
+}
+</script>
