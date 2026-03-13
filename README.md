@@ -2,15 +2,33 @@
   <img src="EEE-project.png" alt="EEE Project Logo" width="200"/>
 </p>
 
-# Ελληνικά Εκπαιδευτικά Εργαλεία (EEE) -- Greek Language Educational Tools
+# Ελληνικά Εκπαιδευτικά Εργαλεία (EEE) — Greek Language Educational Tools
 
-A collection of interactive **Marimo** notebooks designed to help students practice Modern Greek grammar, specifically noun declensions and verb inflections.
+**EEE** is a framework for building interactive [Marimo](https://marimo.io) notebooks with automatic morphological validation for Greek language learning. It enables instructors and learners to create custom interactive educational materials with word-form testing exercises.
+
+## Framework Overview
+
+This is not just a collection of exercises — it's a reusable framework for:
+- **Educators & Methodologists**: Embed interactive tests directly into teaching materials; create exercises from your own word lists and course notes
+- **Students**: Systematize notes with interactive assignments; build personalized tests from required vocabulary
+- **Developers**: Use the modular architecture to extend with new test types, languages, or morphological features
+
+## Example Applications
+
+Two ready-to-use example notebooks demonstrating the framework:
+- **Noun Declension Tester**: https://molab.marimo.io/notebooks/nb_KZYjBCXm1jiSjMBnvxWezi/app
+- **Verb Conjugation Tester**: https://molab.marimo.io/notebooks/nb_HJPdFCQMSBvpw3EafKK88v/app
+
+These examples showcase the framework capabilities: built-in word samples, custom CSV/TSV upload, automatic form generation, real-time validation.
 
 ## Project Structure
 
-- **`greek_nouns.py`**: Interactive notebook for practicing noun declensions (Simple and with Articles).
-- **`greek_verbs.py`**: Interactive notebook for practicing verb inflections (supports Aorist, Imperfect, Future, Subjunctive, and Perfect).
-- **`greek_utils.py`**: Shared utility module containing morphological logic and UI components.
+### Framework Components
+- **`greek_utils.py`**: Core utility module with morphological validation, UI components, and test harness logic
+
+### Example Applications (built with the framework)
+- **`greek_nouns.py`**: Interactive notebook for practicing noun declensions (Simple and with Articles)
+- **`greek_verbs.py`**: Interactive notebook for practicing verb conjugations (supports Present, Imperfect, Aorist, Future, Continuous Future, Subjunctive)
 
 ## Prerequisites
 
@@ -71,16 +89,35 @@ Check the boxes next to the words you want to practice in the table. The noteboo
 ### 4. Progression
 Once you correctly fill in all forms for a word, it is automatically removed from the "Words to Test" list. A progress counter (e.g., `3/6 words remaining`) keeps you updated.
 
-## Extending the Project
+## Creating Custom Applications
 
-The project is designed to be modular.
-- **Adding new tenses**: Update the `VERB_TENSE_CONFIG` in `greek_utils.py`. The system currently supports:
-    - Present (Ενεστώτας)
-    - Imperfect / Past Continuous (Παρατατικός)
-    - Aorist (Αόριστος)
-    - Simple Future (Στιγμιαίος Μέλλοντας)
-    - Continuous Future (Συνεχής Μέλλοντας)
-    - Simple Subjunctive (Στιγμιαία Υποτακτική)
-    - Continuous Subjunctive (Συνεχής Υποτακτική)
-    - Perfect (Παρακείμενος)
-- **Custom CSS**: Modify `marimo.App` settings or use a custom CSS file to change the visual theme.
+The framework is modular and extensible:
+
+### Adding New Tenses
+Update the `VERB_TENSE_CONFIG` in `greek_utils.py`. Currently supported:
+- Present (Ενεστώτας)
+- Imperfect / Past Continuous (Παρατατικός)
+- Aorist (Αόριστος)
+- Simple Future (Στιγμιαίος Μέλλοντας)
+- Continuous Future (Συνεχής Μέλλοντας)
+- Simple Subjunctive (Στιγμιαία Υποτακτική)
+- Continuous Subjunctive (Συνεχής Υποτακτική)
+- Perfect (Παρακείμενος)
+
+### Adding New Test Types
+The framework supports noun and verb testing. You can:
+- Create new test modules by following the patterns in `greek_utils.py`
+- Use the `modern-greek-inflexion` library for morphological analysis
+- Implement custom validation logic for new grammatical features
+
+### Recommended Workflow for Educators
+1. **Prepare materials**: Organize teaching content (textbooks, notes, vocabularies) + reference to this framework
+2. **Generate descriptions**: Use NotebookLM or similar to create structured descriptions of topics and exercises
+3. **Human review**: Iterate on the descriptions to ensure accuracy and clarity
+4. **Generate notebook**: Use an AI tool (Antigravity, Claude Code, Gemini CLI, Codex, etc.) to generate a Marimo notebook from the description
+5. **Deploy**: Use the notebook as part of your course materials
+
+### Customization
+- Modify `marimo.App` settings to adjust styling, layout, or behavior
+- Create custom CSS files for theme changes
+- Adjust form field labels and UI strings via the translation system (English, Russian, Greek supported)
