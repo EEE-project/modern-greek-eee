@@ -141,7 +141,7 @@ def _():
             "description": "Practice noun declensions in simple and article modes.",
             "use_csv": "Use the sample word set or upload a TAB-delimited CSV file with \"Word\" and \"Translation\" columns.",
             "instructions": "To complete the test, you must correctly fill in all fields in **one of the test forms** (simple or article mode).",
-            "file_upload": "Load CSV",
+            "file_upload": "Load TSV",
             "simple_test": "Simple test for Nouns",
             "article_test": "Test for Nouns with Articles",
             "translation_label": "Translation:",

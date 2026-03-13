@@ -238,7 +238,7 @@ def _():
             "description": "Practice verb conjugation across multiple tenses.",
             "select_hint": "Select a tense or combination of tenses to practice: Present, Imperfect, Aorist, Simple Future, Continuous Future, or Simple Subjunctive.",
             "use_csv": "Use the sample word set or upload a TAB-delimited CSV file with \"Word\" and \"Translation\" columns.",
-            "file_upload": "Load CSV",
+            "file_upload": "Load TSV",
             "select_tenses": "Select tenses:",
             "practice_heading": "## Practice: Verb Conjugation",
             "empty_list": "Word list is empty. Select words in the table above.",
