@@ -62,16 +62,23 @@ def create_noun_test_ui(words, mode='simple'):
                 'Def. Pl. Nom.:', 'Def. Pl. Acc.:', 'Def. Pl. Gen.:',
                 'Ind. Sg. Nom.:', 'Ind. Sg. Acc.:', 'Ind. Sg. Gen.:'
             ]
-
+        
         noun_form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(label="Check", show_clear_button=True)
         noun_form.test_word = word
     return word, translation, noun_form
+
+def _ci_match(value, forms):
+    """Case-insensitive membership test with early exit. Returns True if value.lower() matches any form.lower()"""
+    if not forms:
+        return False
+    value_lower = value.lower()
+    return any(f.lower() == value_lower for f in forms)
 
 def _noun_declension_test(user_input, declension, noun_base, noun_descr, article_descr):
     """Internal validator for a single noun form."""
     if not user_input:
         return False
-
+    
     parts = user_input.split()
     if len(parts) > 1:
         noun_article = parts[0].strip()
@@ -85,7 +92,7 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
 
     # Validate noun form
     correct_noun_forms = word_kind(get_word_by_type(noun_base, 'Noun'), noun_path)
-    word_is_correct = noun_word.lower() in [f.lower() for f in correct_noun_forms] if correct_noun_forms else False
+    word_is_correct = _ci_match(noun_word, correct_noun_forms)
 
     if article_descr is None:
         if word_is_correct:
@@ -98,7 +105,7 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
     art_path = [declension[0], noun_type, declension[1]]
     article_forms = word_kind(article_descr, art_path)
 
-    if article_forms and noun_article.lower() in [f.lower() for f in article_forms] and word_is_correct:
+    if _ci_match(noun_article, article_forms) and word_is_correct:
         return True
     else:
         article_type = 'def' if article_descr.article in ['ο', 'η', 'το'] else 'indef'
@@ -111,30 +118,30 @@ def check_noun_test(noun, noun_form, mode='simple'):
     """Checks noun declension forms."""
     if not noun or noun_form is None or not noun_form.value:
         return False
-
+        
     if hasattr(noun_form, 'test_word') and noun_form.test_word != noun:
         return False
 
     noun_array = noun.split()
     noun_word = noun_array[1].strip() if len(noun_array) > 1 else noun.strip()
-
+    
     v_obj = get_word_by_type(noun_word, 'Noun')
     if not v_obj:
         return False
     descr = v_obj.all()
 
     cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-
+    
     if mode == 'simple':
-        checks = [_noun_declension_test(val, case, noun_word, descr, None)
+        checks = [_noun_declension_test(val, case, noun_word, descr, None) 
                   for val, case in zip(noun_form.value, cases)]
         return all(checks)
     else:
         art_def = Article('ο')
         art_indef = Article('ένας')
-        def_checks = [_noun_declension_test(val, case, noun_word, descr, art_def)
+        def_checks = [_noun_declension_test(val, case, noun_word, descr, art_def) 
                       for val, case in zip(noun_form.value[:6], cases)]
-        indef_checks = [_noun_declension_test(val, case, noun_word, descr, art_indef)
+        indef_checks = [_noun_declension_test(val, case, noun_word, descr, art_indef) 
                         for val, case in zip(noun_form.value[6:], cases[:3])]
         return all(def_checks) and all(indef_checks)
 
@@ -143,7 +150,7 @@ def process_noun_test(noun, noun_form, words, words4test, set_words4test, set_la
     w4t = words4test() if callable(words4test) else words4test
     if not w4t or noun_form is None or not noun_form.value:
         return mo.md("")
-
+    
     output = ""
     with mo.capture_stdout() as buffer:
         passed = check_noun_test(noun, noun_form, mode)
@@ -158,7 +165,7 @@ def process_noun_test(noun, noun_form, words, words4test, set_words4test, set_la
                 _candidates = [w for w in new_words4test if w["Word"] != noun]
                 if not _candidates and new_words4test:
                     _candidates = new_words4test
-
+                
                 if _candidates:
                     set_current_noun(random.choice(_candidates))
                 else:
@@ -166,7 +173,7 @@ def process_noun_test(noun, noun_form, words, words4test, set_words4test, set_la
             output = msg
         else:
             output = buffer.getvalue()
-
+            
     return mo.md(output)
 
 # --- Verb Logic ---
@@ -205,10 +212,6 @@ VERB_TENSE_CONFIG = {
     'subjunctive_continuous': {  # Continuous Subjunctive (Συνεχής Υποτακτική)
         'path': ['present', 'active', 'ind'],
         'prefix': 'να ',
-    },
-    'perfect': {  # Perfect (Παρακείμενος)
-        'path': ['perfect', 'active', 'ind'],
-        'prefix': 'έχω ',
     }
 }
 
@@ -246,7 +249,7 @@ def check_verb_test(verb_base, form_array, tense):
         return False, ""
     if hasattr(form_array, 'verb_word') and form_array.verb_word != verb_base:
         return False, ""
-
+    
     config = VERB_TENSE_CONFIG.get(tense)
     if not config:
         return False, f"Error: Unknown tense '{tense}'"
@@ -257,7 +260,7 @@ def check_verb_test(verb_base, form_array, tense):
 
     persons = ['pri', 'sec', 'ter']
     numbers = ['sg', 'pl']
-
+    
     possible_paths = [config.get('path')]
     if 'alt_path' in config:
         possible_paths.append(config['alt_path'])
@@ -269,11 +272,12 @@ def check_verb_test(verb_base, form_array, tense):
         if p and word_kind(v_obj, p):
             path_prefix = p
             break
-
+    
     if not path_prefix:
         path_prefix = config.get('path')
 
     display_prefix = config.get('prefix', '')
+    prefix_lower = display_prefix.lower() if display_prefix else ''
     pronouns = ['εγώ', 'εσύ', 'αυτός,-ή,-ό', 'εμείς', 'εσείς', 'αυτοί,-ές,-ά']
     success, errors, idx = True, [], 0
 
@@ -287,8 +291,8 @@ def check_verb_test(verb_base, form_array, tense):
                 continue
 
             check_val = user_val
-            if display_prefix:
-                if user_val.lower().startswith(display_prefix.lower()):
+            if prefix_lower:
+                if user_val.lower().startswith(prefix_lower):
                     check_val = user_val[len(display_prefix):].strip()
                 else:
                     errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{pronoun}]: Write with **"{display_prefix.strip()}"**')
@@ -296,7 +300,7 @@ def check_verb_test(verb_base, form_array, tense):
                     continue
 
             correct_forms = word_kind(v_obj, path_prefix + [num, pers])
-            if not correct_forms or check_val.lower() not in [f.lower() for f in correct_forms]:
+            if not correct_forms or not _ci_match(check_val, correct_forms):
                 success = False
                 available_tenses = list(v_obj.all().keys())
                 expected = "/".join(correct_forms) if correct_forms else f"unknown (path: {path_prefix}, keys: {available_tenses})"
