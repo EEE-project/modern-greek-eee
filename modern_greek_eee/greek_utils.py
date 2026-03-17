@@ -323,3 +323,109 @@ def process_verb_completion(current_verb_val, aorist_ok, future_ok, words, words
             set_current_verb(None)
         return passed_mesg
     return ""
+
+# --- Adjective Logic ---
+
+def create_adjective_test_ui(words, words4test_val, current_adj):
+    """Generates adjective form UI with 3 gender input fields."""
+    form = None
+    md_view = mo.md(f'**The word list for adjective test is empty.**')
+
+    if current_adj:
+        word = current_adj["Word"]
+        translation = current_adj["Translation"]
+
+        form = mo.ui.array([
+            mo.ui.text(label="Masculine:"),
+            mo.ui.text(label="Feminine:"),
+            mo.ui.text(label="Neuter:"),
+        ]).form(show_clear_button=True)
+        form.adj_word = word
+
+        if len(words4test_val):
+            md_view = mo.md(f"""
+            ### Test: Adjective Declension ({len(words4test_val)}/{len(words)})
+            Translation: **{translation}**
+            {form}
+            """)
+    return form, md_view
+
+def check_adjective_test(adj_base, form_array):
+    """Validates adjective forms (masculine, feminine, neuter singular nominative).
+    Allow partial input - only validate non-empty fields."""
+    if form_array is None or form_array.value is None:
+        return False, ""
+    if hasattr(form_array, 'adj_word') and form_array.adj_word != adj_base:
+        return False, ""
+
+    errors = []
+    success = True
+    has_any_input = False
+
+    gender_keys = ['masc', 'fem', 'neut']
+    gender_labels = ['masculine', 'feminine', 'neuter']
+    user_forms = form_array.value
+
+    # Get morphological forms from modern-greek-inflexion
+    adj_obj = get_word_by_type(adj_base, 'Adjective')
+
+    if adj_obj:
+        # Use morphological library to get singular nominative forms
+        adj_desc = adj_obj.all()
+        expected_forms = {}
+        try:
+            # Navigate: adj_desc['adj']['sg'][gender]['nom'] returns a set
+            for i, gender_key in enumerate(gender_keys):
+                forms_set = adj_desc.get('adj', {}).get('sg', {}).get(gender_key, {}).get('nom', set())
+                # Convert set to list
+                expected_forms[gender_labels[i]] = list(forms_set) if forms_set else [adj_base]
+        except:
+            # Fallback if structure doesn't match
+            expected_forms = {
+                'masculine': [adj_base],
+                'feminine': [adj_base],
+                'neuter': [adj_base]
+            }
+    else:
+        # Fallback for unknown adjectives
+        expected_forms = {
+            'masculine': [adj_base],
+            'feminine': [adj_base],
+            'neuter': [adj_base]
+        }
+
+    for idx, gender_label in enumerate(gender_labels):
+        user_val = user_forms[idx].strip()
+        if not user_val:
+            # Empty field: no error shown, but blocks word completion (matches verb/noun behavior)
+            success = False
+            continue
+
+        has_any_input = True
+        correct_forms = expected_forms.get(gender_label, [adj_base])
+
+        if not _ci_match(user_val, correct_forms):
+            success = False
+            correct_text = "/".join(correct_forms)
+            errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{gender_label}]: entered **"{user_val}"**, must be **{correct_text}**')
+
+    # If no input provided at all, fail
+    if not has_any_input:
+        return False, '<span style="color: red; font-weight: bold;">Error!</span> Please fill in at least one gender form'
+
+    return success, "\n\n".join(errors)
+
+def process_adjective_completion(current_adj_val, adj_ok, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_adj):
+    """Updates state and returns message after adjective test completion."""
+    if adj_ok and current_adj_val:
+        new_words4test = [w for w in words4test_val if w["Word"] != current_adj_val["Word"]]
+        set_words4test(new_words4test)
+        remaining, total = len(new_words4test), len(words)
+        passed_mesg = f'<span style="color: green;">Test for <b>"{current_adj_val["Word"]} -- {current_adj_val["Translation"]}"</b> passed.\n\n{remaining} words remaining out of {total}.</span>'
+        set_last_passed_mesg(passed_mesg)
+        if new_words4test:
+            set_current_adj(random.choice(new_words4test))
+        else:
+            set_current_adj(None)
+        return passed_mesg
+    return ""
