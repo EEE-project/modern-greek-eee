@@ -36,7 +36,7 @@ def get_words(table):
 
 def load_data(file_upload, default_data):
     """Helper for CSV loading or default data fallback."""
-    if file_upload.value:
+    if file_upload.value is not None and len(file_upload.value) > 0:
         contents = file_upload.value[0].contents
         contents = io.BytesIO(contents)
         return pd.read_csv(contents, sep='\t')
@@ -326,8 +326,12 @@ def process_verb_completion(current_verb_val, aorist_ok, future_ok, words, words
 
 # --- Adjective Logic ---
 
-def create_adjective_test_ui(words, words4test_val, current_adj):
-    """Generates adjective form UI with 3 gender input fields."""
+def create_adjective_test_ui(words, words4test_val, current_adj, mode='simple'):
+    """Generates adjective form UI.
+
+    Simple mode: 6 fields (3 genders × 2 numbers: singular + plural)
+    Complex mode: 18 fields (3 genders × 2 numbers × 3 cases: nom, acc, gen)
+    """
     form = None
     md_view = mo.md(f'**The word list for adjective test is empty.**')
 
@@ -335,12 +339,27 @@ def create_adjective_test_ui(words, words4test_val, current_adj):
         word = current_adj["Word"]
         translation = current_adj["Translation"]
 
-        form = mo.ui.array([
-            mo.ui.text(label="Masculine:"),
-            mo.ui.text(label="Feminine:"),
-            mo.ui.text(label="Neuter:"),
-        ]).form(show_clear_button=True)
+        if mode == 'simple':
+            # Simple: 3 genders × 2 numbers (singular + plural)
+            labels = [
+                "Masculine Sg:", "Masculine Pl:",
+                "Feminine Sg:", "Feminine Pl:",
+                "Neuter Sg:", "Neuter Pl:"
+            ]
+        else:
+            # Complex: all singulars first (all genders), then all plurals (all genders)
+            labels = [
+                "Masc Sg Nom:", "Masc Sg Acc:", "Masc Sg Gen:",
+                "Fem Sg Nom:", "Fem Sg Acc:", "Fem Sg Gen:",
+                "Neut Sg Nom:", "Neut Sg Acc:", "Neut Sg Gen:",
+                "Masc Pl Nom:", "Masc Pl Acc:", "Masc Pl Gen:",
+                "Fem Pl Nom:", "Fem Pl Acc:", "Fem Pl Gen:",
+                "Neut Pl Nom:", "Neut Pl Acc:", "Neut Pl Gen:"
+            ]
+
+        form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(show_clear_button=True)
         form.adj_word = word
+        form.adj_mode = mode
 
         if len(words4test_val):
             md_view = mo.md(f"""
@@ -350,66 +369,110 @@ def create_adjective_test_ui(words, words4test_val, current_adj):
             """)
     return form, md_view
 
-def check_adjective_test(adj_base, form_array):
-    """Validates adjective forms (masculine, feminine, neuter singular nominative).
+def _adj_field_schema(mode):
+    """Builds field keys and labels for adjective test based on mode.
+
+    Simple mode: 6 fields (3 genders × 2 numbers, nominative only)
+    Complex mode: 18 fields (all singulars for all genders, then all plurals for all genders)
+    """
+    gender_config = [('masculine', 'masc', 'Masc'), ('feminine', 'fem', 'Fem'), ('neuter', 'neut', 'Neut')]
+    cases = [('nom', 'Nom'), ('acc', 'Acc'), ('gen', 'Gen')]
+
+    field_keys = []
+    field_labels = []
+
+    if mode == 'simple':
+        # Simple: 3 genders × 2 numbers (sg, pl) nominative only
+        for gender_label, _gender_key, gender_short in gender_config:
+            for num_key, num_short in [('sg', 'Sg'), ('pl', 'Pl')]:
+                field_keys.append(f'{gender_label}_{num_key}_nom')
+                field_labels.append(f'{gender_short} {num_short}')
+    else:
+        # Complex: all singulars first (all genders × 3 cases), then all plurals
+        # Singulars: Masc Sg (Nom, Acc, Gen), Fem Sg (Nom, Acc, Gen), Neut Sg (Nom, Acc, Gen)
+        for gender_label, _gender_key, gender_short in gender_config:
+            for case_key, case_short in cases:
+                field_keys.append(f'{gender_label}_sg_{case_key}')
+                field_labels.append(f'{gender_short} Sg {case_short}')
+        # Plurals: Masc Pl (Nom, Acc, Gen), Fem Pl (Nom, Acc, Gen), Neut Pl (Nom, Acc, Gen)
+        for gender_label, _gender_key, gender_short in gender_config:
+            for case_key, case_short in cases:
+                field_keys.append(f'{gender_label}_pl_{case_key}')
+                field_labels.append(f'{gender_short} Pl {case_short}')
+
+    return field_keys, field_labels
+
+
+def _adj_expected_forms(adj_base, mode):
+    """Builds expected forms dict from morphological library.
+
+    Returns dict mapping field_key -> list of acceptable forms.
+    """
+    cases = ['nom'] if mode == 'simple' else ['nom', 'acc', 'gen']
+    gender_config = [('masculine', 'masc'), ('feminine', 'fem'), ('neuter', 'neut')]
+
+    adj_obj = get_word_by_type(adj_base, 'Adjective')
+    expected = {}
+
+    if adj_obj:
+        try:
+            adj_desc = adj_obj.all()
+            for gender_label, gender_key in gender_config:
+                for num_key in ['sg', 'pl']:
+                    for case_key in cases:
+                        forms = adj_desc.get('adj', {}).get(num_key, {}).get(gender_key, {}).get(case_key, set())
+                        key = f'{gender_label}_{num_key}_{case_key}'
+                        expected[key] = list(forms) if forms else [adj_base]
+        except Exception:
+            pass
+
+    # Fill missing keys with fallback
+    for gender_label, _gender_key in gender_config:
+        for num_key in ['sg', 'pl']:
+            for case_key in cases:
+                key = f'{gender_label}_{num_key}_{case_key}'
+                if key not in expected:
+                    expected[key] = [adj_base]
+
+    return expected
+
+
+def check_adjective_test(adj_base, form_array, mode='simple'):
+    """Validates adjective forms with mode support.
+
+    Simple mode: validates 6 forms (3 genders × 2 numbers: singular + plural nominative)
+    Complex mode: validates 18 forms (3 genders × 2 numbers × 3 cases: nom, acc, gen)
+
     Allow partial input - only validate non-empty fields."""
     if form_array is None or form_array.value is None:
         return False, ""
     if hasattr(form_array, 'adj_word') and form_array.adj_word != adj_base:
         return False, ""
 
-    errors = []
+    if hasattr(form_array, 'adj_mode'):
+        mode = form_array.adj_mode
+
+    field_keys, field_labels = _adj_field_schema(mode)
+    expected_forms = _adj_expected_forms(adj_base, mode)
+
     success = True
     has_any_input = False
+    errors = []
 
-    gender_keys = ['masc', 'fem', 'neut']
-    gender_labels = ['masculine', 'feminine', 'neuter']
-    user_forms = form_array.value
-
-    # Get morphological forms from modern-greek-inflexion
-    adj_obj = get_word_by_type(adj_base, 'Adjective')
-
-    if adj_obj:
-        # Use morphological library to get singular nominative forms
-        adj_desc = adj_obj.all()
-        expected_forms = {}
-        try:
-            # Navigate: adj_desc['adj']['sg'][gender]['nom'] returns a set
-            for i, gender_key in enumerate(gender_keys):
-                forms_set = adj_desc.get('adj', {}).get('sg', {}).get(gender_key, {}).get('nom', set())
-                # Convert set to list
-                expected_forms[gender_labels[i]] = list(forms_set) if forms_set else [adj_base]
-        except:
-            # Fallback if structure doesn't match
-            expected_forms = {
-                'masculine': [adj_base],
-                'feminine': [adj_base],
-                'neuter': [adj_base]
-            }
-    else:
-        # Fallback for unknown adjectives
-        expected_forms = {
-            'masculine': [adj_base],
-            'feminine': [adj_base],
-            'neuter': [adj_base]
-        }
-
-    for idx, gender_label in enumerate(gender_labels):
-        user_val = user_forms[idx].strip()
+    for idx, (field_key, field_label) in enumerate(zip(field_keys, field_labels)):
+        user_val = form_array.value[idx].strip()
         if not user_val:
-            # Empty field: no error shown, but blocks word completion (matches verb/noun behavior)
             success = False
             continue
 
         has_any_input = True
-        correct_forms = expected_forms.get(gender_label, [adj_base])
+        correct_forms = expected_forms.get(field_key, [adj_base])
 
         if not _ci_match(user_val, correct_forms):
             success = False
             correct_text = "/".join(correct_forms)
-            errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{gender_label}]: entered **"{user_val}"**, must be **{correct_text}**')
+            errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{field_label}]: entered **"{user_val}"**, must be **{correct_text}**')
 
-    # If no input provided at all, fail
     if not has_any_input:
         return False, '<span style="color: red; font-weight: bold;">Error!</span> Please fill in at least one gender form'
 

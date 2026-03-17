@@ -3,10 +3,13 @@
 # dependencies = [
 #     "marimo>=0.19.4",
 #     "mcp==1.25.0",
-#     "modern-greek-eee
+#     "modern-greek-eee @ git+https://github.com/EEE-project/modern-greek-eee.git",
 #     "modern-greek-inflexion==2.0.7",
 #     "pandas==2.3.3",
 # ]
+#
+# [tool.uv.sources]
+# modern-greek-eee = { git = "https://github.com/EEE-project/modern-greek-eee" }
 # ///
 
 import marimo
@@ -26,7 +29,7 @@ def _(language_selector, mo, t_ui):
     mo.md(f"""
     # {t_ui("title", _lang)}
 
-    [![Open in molab](https://molab.marimo.io/molab-shield.svg)](https://molab.marimo.io/notebooks/nb_ADJECTIVES)
+    [![Open in molab](https://molab.marimo.io/molab-shield.svg)](https://molab.marimo.io/notebooks/nb_C7b5s58CeEseJvBWTbw8Px)
 
     **{t_ui("description", _lang)}**
 
@@ -50,6 +53,24 @@ def _(language_selector, mo, t_ui):
     file_upload = mo.ui.file(label=t_ui("file_upload", _lang))
     file_upload
     return (file_upload,)
+
+
+@app.cell(hide_code=True)
+def _(language_selector, mo, t_ui):
+    _lang = language_selector.value
+    _simple_label = t_ui("simple_mode", _lang)
+    mode_selector = mo.ui.radio(
+        options={
+            _simple_label: "simple",
+            t_ui("complex_mode", _lang): "complex"
+        },
+        value=_simple_label,
+        label=t_ui("select_mode", _lang)
+    )
+    mo.md(f"""
+    {mode_selector}
+    """)
+    return (mode_selector,)
 
 
 @app.cell(hide_code=True)
@@ -89,7 +110,10 @@ def _():
             "description": "Practice adjective declension across different gender and number forms.",
             "use_csv": "Use the sample word set or upload a TAB-delimited CSV file with \"Word\" and \"Translation\" columns.",
             "file_upload": "Load TSV",
-            "instructions": "To complete the test, fill in all three gender forms (masculine, feminine, neuter) for each adjective.",
+            "select_mode": "Test Mode:",
+            "simple_mode": "Simple: 3 genders × 2 numbers (6 fields)",
+            "complex_mode": "Complex: All genders, numbers, and cases (18 fields)",
+            "instructions": "Select a mode and fill in all required forms for each adjective.",
             "test_label": "Test: Adjective Declension",
             "translation_label": "Translation:",
             "empty_list": "The word list is empty.",
@@ -99,7 +123,10 @@ def _():
             "description": "Попрактикуйте склонение прилагательных в различных формах рода и числа.",
             "use_csv": "Используйте образец набора слов или загрузите CSV-файл с табуляцией в качестве разделителя со столбцами \"Word\" и \"Translation\".",
             "file_upload": "Загрузить TSV",
-            "instructions": "Чтобы завершить тест, заполните все три формы рода (мужской род, женский род, средний род) для каждого прилагательного.",
+            "select_mode": "Режим теста:",
+            "simple_mode": "Простой: 3 рода × 2 числа (6 полей)",
+            "complex_mode": "Сложный: все роды, числа и падежи (18 полей)",
+            "instructions": "Выберите режим и заполните все необходимые формы для каждого прилагательного.",
             "test_label": "Тест: Склонение прилагательных",
             "translation_label": "Перевод:",
             "empty_list": "Список слов пуст.",
@@ -109,7 +136,10 @@ def _():
             "description": "Εξασκηθείτε τη κλίση των επιθέτων σε διάφορες φόρμες φύλου και αριθμού.",
             "use_csv": "Χρησιμοποιήστε το δείγμα συνόλου λέξεων ή φορτώστε ένα αρχείο CSV που οριοθετείται με TAB με στήλες \"Word\" και \"Translation\".",
             "file_upload": "Φόρτωση TSV",
-            "instructions": "Για να ολοκληρώσετε το τεστ, συμπληρώστε και τις τρεις φόρμες φύλου (αρσενικό, θηλυκό, ουδέτερο) για κάθε επίθετο.",
+            "select_mode": "Λειτουργία δοκιμής:",
+            "simple_mode": "Απλή: 3 φύλα × 2 αριθμοί (6 πεδία)",
+            "complex_mode": "Σύνθετη: όλα τα φύλα, αριθμοί και πτώσεις (18 πεδία)",
+            "instructions": "Επιλέξτε λειτουργία και συμπληρώστε όλες τις απαιτούμενες φόρμες για κάθε επίθετο.",
             "test_label": "Τεστ: Κλίση Επιθέτων",
             "translation_label": "Μετάφραση:",
             "empty_list": "Η λίστα λέξεων είναι κενή.",
@@ -140,10 +170,11 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(adj_cv, gu):
-    # Setup adjective test form
+def _(adj_cv, gu, mode_selector):
+    # Setup adjective test form with selected mode
     _acv = adj_cv()
-    adj_form, _ = gu.create_adjective_test_ui([] if not _acv else [_acv], [], _acv)
+    _mode = mode_selector.value
+    adj_form, _ = gu.create_adjective_test_ui([] if not _acv else [_acv], [], _acv, mode=_mode)
     return (adj_form,)
 
 
@@ -152,16 +183,18 @@ def _(
     adj_cv,
     adj_form,
     gu,
+    mode_selector,
     set_adj_cv,
     set_adj_last_passed_mesg,
     set_words4test,
     words,
     words4test,
 ):
-    # Adjective test progression
+    # Adjective test progression with mode
     _adj = adj_cv()
+    _mode = mode_selector.value
     if words4test() and _adj and adj_form:
-        adj_ok, _ = gu.check_adjective_test(_adj['Word'], adj_form)
+        adj_ok, _ = gu.check_adjective_test(_adj['Word'], adj_form, mode=_mode)
         gu.process_adjective_completion(_adj, adj_ok, words, words4test(), set_words4test, set_adj_last_passed_mesg, set_adj_cv)
     return
 

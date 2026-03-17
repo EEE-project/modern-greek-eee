@@ -7,6 +7,9 @@
 #     "modern-greek-inflexion==2.0.7",
 #     "pandas==2.3.3",
 # ]
+#
+# [tool.uv.sources]
+# modern-greek-eee = { git = "https://github.com/EEE-project/modern-greek-eee" }
 # ///
 
 import marimo
