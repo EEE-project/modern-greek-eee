@@ -52,15 +52,15 @@ def make_form(word, values, mode='simple'):
 
 def test_type_kalos_all_correct():
     """Type καλός: All 6 forms correct (3 genders × 2 numbers, nominative only)."""
-    # Masc Sg, Masc Pl, Fem Sg, Fem Pl, Neut Sg, Neut Pl
-    form = make_form('καλός', ['καλός', 'καλοί', 'καλή', 'καλές', 'καλό', 'καλά'], mode='simple')
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
+    form = make_form('καλός', ['καλός', 'καλή', 'καλό', 'καλοί', 'καλές', 'καλά'], mode='simple')
     ok, msg = check_adjective_test('καλός', form)
     assert ok == True, f"Should pass with correct forms. Error: {msg}"
 
 
 def test_type_kalos_wrong_feminine():
     """Type καλός: Wrong feminine plural form."""
-    form = make_form('καλός', ['καλός', 'καλοί', 'καλή', 'wrong', 'καλό', 'καλά'], mode='simple')
+    form = make_form('καλός', ['καλός', 'καλή', 'καλό', 'καλοί', 'wrong', 'καλά'], mode='simple')
     ok, msg = check_adjective_test('καλός', form)
     assert ok == False
     assert 'Fem Pl' in msg or 'feminine' in msg
@@ -70,14 +70,14 @@ def test_type_kalos_wrong_feminine():
 
 def test_type_kalos_case_insensitive():
     """Type καλός: Case-insensitive matching (e.g., Android autocomplete)."""
-    form = make_form('καλός', ['Καλός', 'Καλοί', 'Καλή', 'Καλές', 'Καλό', 'Καλά'], mode='simple')
+    form = make_form('καλός', ['Καλός', 'Καλή', 'Καλό', 'Καλοί', 'Καλές', 'Καλά'], mode='simple')
     ok, msg = check_adjective_test('καλός', form)
     assert ok == True, f"Should handle uppercase. Error: {msg}"
 
 
 def test_type_kalos_partial_input():
-    """Type καλός: Partial input (only masculine, rest empty) should not pass."""
-    form = make_form('καλός', ['καλός', 'καλοί', '', '', '', ''], mode='simple')
+    """Type καλός: Partial input (only masculine singular, rest empty) should not pass."""
+    form = make_form('καλός', ['καλός', '', '', '', '', ''], mode='simple')
     ok, msg = check_adjective_test('καλός', form)
     assert ok == False, "Should not pass with empty fields"
     assert msg == '', "Should have no error message for correct partial input"
@@ -89,15 +89,15 @@ def test_type_kalos_partial_input():
 
 def test_type_tempeli_all_correct():
     """Type τεμπέλης: All 6 forms correct (character adjective -ης/-α/-ικο)."""
-    # Masc Sg, Masc Pl, Fem Sg, Fem Pl, Neut Sg, Neut Pl
-    form = make_form('τεμπέλης', ['τεμπέλης', 'τεμπέληδες', 'τεμπέλα', 'τεμπέλες', 'τεμπέλικο', 'τεμπέλικα'], mode='simple')
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
+    form = make_form('τεμπέλης', ['τεμπέλης', 'τεμπέλα', 'τεμπέλικο', 'τεμπέληδες', 'τεμπέλες', 'τεμπέλικα'], mode='simple')
     ok, msg = check_adjective_test('τεμπέλης', form)
     assert ok == True, f"Should pass. Error: {msg}"
 
 
 def test_type_tempeli_wrong_neuter():
     """Type τεμπέλης: Wrong neuter plural form."""
-    form = make_form('τεμπέλης', ['τεμπέλης', 'τεμπέληδες', 'τεμπέλα', 'τεμπέλες', 'τεμπέλικο', 'wrong'], mode='simple')
+    form = make_form('τεμπέλης', ['τεμπέλης', 'τεμπέλα', 'τεμπέλικο', 'τεμπέληδες', 'τεμπέλες', 'wrong'], mode='simple')
     ok, msg = check_adjective_test('τεμπέλης', form)
     assert ok == False
     assert 'Neut Pl' in msg or 'neuter' in msg
@@ -106,7 +106,8 @@ def test_type_tempeli_wrong_neuter():
 
 def test_type_ziliarís_all_correct():
     """Type ζηλιάρης: Another -ης adjective."""
-    form = make_form('ζηλιάρης', ['ζηλιάρης', 'ζηλιάρηδες', 'ζηλιάρα', 'ζηλιάρες', 'ζηλιάρικο', 'ζηλιάρικα'], mode='simple')
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
+    form = make_form('ζηλιάρης', ['ζηλιάρης', 'ζηλιάρα', 'ζηλιάρικο', 'ζηλιάρηδες', 'ζηλιάρες', 'ζηλιάρικα'], mode='simple')
     ok, msg = check_adjective_test('ζηλιάρης', form)
     assert ok == True, f"Should pass. Error: {msg}"
 
@@ -117,15 +118,15 @@ def test_type_ziliarís_all_correct():
 
 def test_type_oraios_all_correct():
     """Type ωραίος: All 6 forms correct (-αιος type)."""
-    # Masc Sg, Masc Pl, Fem Sg, Fem Pl, Neut Sg, Neut Pl
-    form = make_form('ωραίος', ['ωραίος', 'ωραίοι', 'ωραία', 'ωραίες', 'ωραίο', 'ωραία'], mode='simple')
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
+    form = make_form('ωραίος', ['ωραίος', 'ωραία', 'ωραίο', 'ωραίοι', 'ωραίες', 'ωραία'], mode='simple')
     ok, msg = check_adjective_test('ωραίος', form)
     assert ok == True, f"Should pass. Error: {msg}"
 
 
 def test_type_oraios_wrong_feminine():
     """Type ωραίος: Wrong feminine plural form."""
-    form = make_form('ωραίος', ['ωραίος', 'ωραίοι', 'ωραία', 'wrong', 'ωραίο', 'ωραία'], mode='simple')
+    form = make_form('ωραίος', ['ωραίος', 'ωραία', 'ωραίο', 'ωραίοι', 'wrong', 'ωραία'], mode='simple')
     ok, msg = check_adjective_test('ωραίος', form)
     assert ok == False
     assert 'Fem Pl' in msg or 'feminine' in msg
@@ -138,15 +139,15 @@ def test_type_oraios_wrong_feminine():
 
 def test_type_vathis_all_correct():
     """Type βαθύς: All 6 forms correct (irregular stem changes)."""
-    # Masc Sg, Masc Pl, Fem Sg, Fem Pl, Neut Sg, Neut Pl
-    form = make_form('βαθύς', ['βαθύς', 'βαθείς', 'βαθιά', 'βαθιές', 'βαθύ', 'βαθιά'], mode='simple')
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
+    form = make_form('βαθύς', ['βαθύς', 'βαθιά', 'βαθύ', 'βαθείς', 'βαθιές', 'βαθιά'], mode='simple')
     ok, msg = check_adjective_test('βαθύς', form)
     assert ok == True, f"Should pass. Error: {msg}"
 
 
 def test_type_vathis_wrong_feminine():
     """Type βαθύς: Wrong feminine plural form."""
-    form = make_form('βαθύς', ['βαθύς', 'βαθείς', 'βαθιά', 'wrong', 'βαθύ', 'βαθιά'], mode='simple')
+    form = make_form('βαθύς', ['βαθύς', 'βαθιά', 'βαθύ', 'βαθείς', 'wrong', 'βαθιά'], mode='simple')
     ok, msg = check_adjective_test('βαθύς', form)
     assert ok == False
     assert 'βαθιές' in msg
@@ -158,15 +159,15 @@ def test_type_vathis_wrong_feminine():
 
 def test_type_synechis_all_correct():
     """Type συνεχής: All 6 forms correct (masculine and feminine identical)."""
-    # Masc Sg, Masc Pl, Fem Sg, Fem Pl, Neut Sg, Neut Pl
-    form = make_form('συνεχής', ['συνεχής', 'συνεχείς', 'συνεχής', 'συνεχείς', 'συνεχές', 'συνεχή'], mode='simple')
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
+    form = make_form('συνεχής', ['συνεχής', 'συνεχής', 'συνεχές', 'συνεχείς', 'συνεχείς', 'συνεχή'], mode='simple')
     ok, msg = check_adjective_test('συνεχής', form)
     assert ok == True, f"Should pass. Error: {msg}"
 
 
 def test_type_synechis_wrong_feminine():
     """Type συνεχής: Wrong feminine plural (should be same as masculine plural)."""
-    form = make_form('συνεχής', ['συνεχής', 'συνεχείς', 'συνεχής', 'wrong', 'συνεχές', 'συνεχή'], mode='simple')
+    form = make_form('συνεχής', ['συνεχής', 'συνεχής', 'συνεχές', 'συνεχείς', 'wrong', 'συνεχή'], mode='simple')
     ok, msg = check_adjective_test('συνεχής', form)
     assert ok == False
     assert 'Fem Pl' in msg or 'feminine' in msg
@@ -179,15 +180,15 @@ def test_type_synechis_wrong_feminine():
 
 def test_type_kurasmenus_all_correct():
     """Type κουρασμένος: All 6 forms correct (past participle adjective)."""
-    # Masc Sg, Masc Pl, Fem Sg, Fem Pl, Neut Sg, Neut Pl
-    form = make_form('κουρασμένος', ['κουρασμένος', 'κουρασμένοι', 'κουρασμένη', 'κουρασμένες', 'κουρασμένο', 'κουρασμένα'], mode='simple')
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
+    form = make_form('κουρασμένος', ['κουρασμένος', 'κουρασμένη', 'κουρασμένο', 'κουρασμένοι', 'κουρασμένες', 'κουρασμένα'], mode='simple')
     ok, msg = check_adjective_test('κουρασμένος', form)
     assert ok == True, f"Should pass. Error: {msg}"
 
 
 def test_type_kurasmenus_wrong_feminine():
     """Type κουρασμένος: Wrong feminine plural form."""
-    form = make_form('κουρασμένος', ['κουρασμένος', 'κουρασμένοι', 'κουρασμένη', 'wrong', 'κουρασμένο', 'κουρασμένα'], mode='simple')
+    form = make_form('κουρασμένος', ['κουρασμένος', 'κουρασμένη', 'κουρασμένο', 'κουρασμένοι', 'wrong', 'κουρασμένα'], mode='simple')
     ok, msg = check_adjective_test('κουρασμένος', form)
     assert ok == False
     assert 'κουρασμένες' in msg
@@ -199,7 +200,7 @@ def test_type_kurasmenus_wrong_feminine():
 
 def test_type_ble_all_correct():
     """Type μπλε: All 6 forms correct (invariable adjective)."""
-    # Masc Sg, Masc Pl, Fem Sg, Fem Pl, Neut Sg, Neut Pl
+    # All singulars first: Masc Sg, Fem Sg, Neut Sg, then all plurals: Masc Pl, Fem Pl, Neut Pl
     form = make_form('μπλε', ['μπλε', 'μπλε', 'μπλε', 'μπλε', 'μπλε', 'μπλε'], mode='simple')
     ok, msg = check_adjective_test('μπλε', form)
     assert ok == True, f"Should pass. Error: {msg}"
@@ -207,7 +208,7 @@ def test_type_ble_all_correct():
 
 def test_type_ble_wrong_form():
     """Type μπλε: Wrong form for invariable adjective."""
-    form = make_form('μπλε', ['μπλε', 'μπλε', 'μπλε', 'wrong', 'μπλε', 'μπλε'], mode='simple')
+    form = make_form('μπλε', ['μπλε', 'μπλε', 'μπλε', 'μπλε', 'wrong', 'μπλε'], mode='simple')
     ok, msg = check_adjective_test('μπλε', form)
     assert ok == False
     assert 'Fem Pl' in msg or 'feminine' in msg

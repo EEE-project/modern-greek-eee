@@ -329,8 +329,8 @@ def process_verb_completion(current_verb_val, aorist_ok, future_ok, words, words
 def create_adjective_test_ui(words, words4test_val, current_adj, mode='simple'):
     """Generates adjective form UI.
 
-    Simple mode: 6 fields (3 genders × 2 numbers: singular + plural)
-    Complex mode: 18 fields (3 genders × 2 numbers × 3 cases: nom, acc, gen)
+    Simple mode: 6 fields (all singulars first: Masc/Fem/Neut Sg, then all plurals: Masc/Fem/Neut Pl)
+    Complex mode: 18 fields (all singulars for all genders × cases, then all plurals for all genders × cases)
     """
     form = None
     md_view = mo.md(f'**The word list for adjective test is empty.**')
@@ -339,23 +339,9 @@ def create_adjective_test_ui(words, words4test_val, current_adj, mode='simple'):
         word = current_adj["Word"]
         translation = current_adj["Translation"]
 
-        if mode == 'simple':
-            # Simple: 3 genders × 2 numbers (singular + plural)
-            labels = [
-                "Masculine Sg:", "Masculine Pl:",
-                "Feminine Sg:", "Feminine Pl:",
-                "Neuter Sg:", "Neuter Pl:"
-            ]
-        else:
-            # Complex: all singulars first (all genders), then all plurals (all genders)
-            labels = [
-                "Masc Sg Nom:", "Masc Sg Acc:", "Masc Sg Gen:",
-                "Fem Sg Nom:", "Fem Sg Acc:", "Fem Sg Gen:",
-                "Neut Sg Nom:", "Neut Sg Acc:", "Neut Sg Gen:",
-                "Masc Pl Nom:", "Masc Pl Acc:", "Masc Pl Gen:",
-                "Fem Pl Nom:", "Fem Pl Acc:", "Fem Pl Gen:",
-                "Neut Pl Nom:", "Neut Pl Acc:", "Neut Pl Gen:"
-            ]
+        # Get field labels from schema to ensure consistency
+        _, field_labels = _adj_field_schema(mode)
+        labels = [f"{label}:" for label in field_labels]
 
         form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(show_clear_button=True)
         form.adj_word = word
@@ -372,8 +358,8 @@ def create_adjective_test_ui(words, words4test_val, current_adj, mode='simple'):
 def _adj_field_schema(mode):
     """Builds field keys and labels for adjective test based on mode.
 
-    Simple mode: 6 fields (3 genders × 2 numbers, nominative only)
-    Complex mode: 18 fields (all singulars for all genders, then all plurals for all genders)
+    Simple mode: 6 fields (all singulars first: Masc/Fem/Neut Sg, then all plurals: Masc/Fem/Neut Pl)
+    Complex mode: 18 fields (all singulars for all genders × cases, then all plurals for all genders × cases)
     """
     gender_config = [('masculine', 'masc', 'Masc'), ('feminine', 'fem', 'Fem'), ('neuter', 'neut', 'Neut')]
     cases = [('nom', 'Nom'), ('acc', 'Acc'), ('gen', 'Gen')]
@@ -382,11 +368,15 @@ def _adj_field_schema(mode):
     field_labels = []
 
     if mode == 'simple':
-        # Simple: 3 genders × 2 numbers (sg, pl) nominative only
+        # Simple: all singulars first (3 genders), then all plurals (3 genders), nominative only
+        # Singulars: Masc Sg, Fem Sg, Neut Sg
         for gender_label, _gender_key, gender_short in gender_config:
-            for num_key, num_short in [('sg', 'Sg'), ('pl', 'Pl')]:
-                field_keys.append(f'{gender_label}_{num_key}_nom')
-                field_labels.append(f'{gender_short} {num_short}')
+            field_keys.append(f'{gender_label}_sg_nom')
+            field_labels.append(f'{gender_short} Sg')
+        # Plurals: Masc Pl, Fem Pl, Neut Pl
+        for gender_label, _gender_key, gender_short in gender_config:
+            field_keys.append(f'{gender_label}_pl_nom')
+            field_labels.append(f'{gender_short} Pl')
     else:
         # Complex: all singulars first (all genders × 3 cases), then all plurals
         # Singulars: Masc Sg (Nom, Acc, Gen), Fem Sg (Nom, Acc, Gen), Neut Sg (Nom, Acc, Gen)
