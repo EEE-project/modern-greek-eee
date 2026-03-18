@@ -14,10 +14,16 @@ def get_word_by_type(word, wtype):
         return word_type(word)
     return None
 
-def word_kind(word_obj, kind_path):
-    """Extracts specific grammatical forms from a morphological word object."""
+def word_kind(word_obj, kind_path, word_desc=None):
+    """Extracts specific grammatical forms from a morphological word object.
+
+    Args:
+        word_obj: The morphological word object
+        kind_path: List of keys to traverse the morphological dict
+        word_desc: Optional pre-computed word_obj.all() dict to avoid recomputation
+    """
     if word_obj and kind_path:
-        result = word_obj.all()
+        result = word_desc if word_desc is not None else word_obj.all()
         for item in kind_path:
             if isinstance(result, dict) and item in result:
                 result = result[item]
@@ -258,9 +264,12 @@ def check_verb_test(verb_base, form_array, tense):
     if not v_obj:
         return False, "Error: Morphological object not found."
 
+    # Cache morphological expansion to avoid 6+ redundant calls in the loop
+    v_desc = v_obj.all()
+
     persons = ['pri', 'sec', 'ter']
     numbers = ['sg', 'pl']
-    
+
     possible_paths = [config.get('path')]
     if 'alt_path' in config:
         possible_paths.append(config['alt_path'])
@@ -269,10 +278,10 @@ def check_verb_test(verb_base, form_array, tense):
 
     path_prefix = None
     for p in possible_paths:
-        if p and word_kind(v_obj, p):
+        if p and word_kind(v_obj, p, v_desc):
             path_prefix = p
             break
-    
+
     if not path_prefix:
         path_prefix = config.get('path')
 
@@ -299,10 +308,10 @@ def check_verb_test(verb_base, form_array, tense):
                     success = False
                     continue
 
-            correct_forms = word_kind(v_obj, path_prefix + [num, pers])
+            correct_forms = word_kind(v_obj, path_prefix + [num, pers], v_desc)
             if not correct_forms or not _ci_match(check_val, correct_forms):
                 success = False
-                available_tenses = list(v_obj.all().keys())
+                available_tenses = list(v_desc.keys())
                 expected = "/".join(correct_forms) if correct_forms else f"unknown (path: {path_prefix}, keys: {available_tenses})"
                 if display_prefix: expected = f"{display_prefix}{expected}"
                 errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{pronoun}]: entered **"{user_val}"**, must be **{expected}**')
@@ -393,20 +402,31 @@ def _adj_field_schema(mode):
     return field_keys, field_labels
 
 
-def _adj_expected_forms(adj_base, mode):
+def _adj_expected_forms(adj_base, mode, adj_desc=None):
     """Builds expected forms dict from morphological library.
+
+    Args:
+        adj_base: The adjective base word
+        mode: 'simple' or 'complex'
+        adj_desc: Optional pre-computed adj_obj.all() dict to avoid recomputation
 
     Returns dict mapping field_key -> list of acceptable forms.
     """
     cases = ['nom'] if mode == 'simple' else ['nom', 'acc', 'gen']
     gender_config = [('masculine', 'masc'), ('feminine', 'fem'), ('neuter', 'neut')]
 
-    adj_obj = get_word_by_type(adj_base, 'Adjective')
     expected = {}
 
-    if adj_obj:
+    if adj_desc is None:
+        adj_obj = get_word_by_type(adj_base, 'Adjective')
+        if adj_obj:
+            try:
+                adj_desc = adj_obj.all()
+            except Exception:
+                adj_desc = None
+
+    if adj_desc:
         try:
-            adj_desc = adj_obj.all()
             for gender_label, gender_key in gender_config:
                 for num_key in ['sg', 'pl']:
                     for case_key in cases:
@@ -442,8 +462,17 @@ def check_adjective_test(adj_base, form_array, mode='simple'):
     if hasattr(form_array, 'adj_mode'):
         mode = form_array.adj_mode
 
+    # Cache morphological expansion to pass to _adj_expected_forms
+    adj_obj = get_word_by_type(adj_base, 'Adjective')
+    adj_desc = None
+    if adj_obj:
+        try:
+            adj_desc = adj_obj.all()
+        except Exception:
+            pass
+
     field_keys, field_labels = _adj_field_schema(mode)
-    expected_forms = _adj_expected_forms(adj_base, mode)
+    expected_forms = _adj_expected_forms(adj_base, mode, adj_desc)
 
     success = True
     has_any_input = False
