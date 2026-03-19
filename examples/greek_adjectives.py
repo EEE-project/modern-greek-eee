@@ -193,7 +193,7 @@ def _(
     # Adjective test progression with mode
     _adj = adj_cv()
     _mode = mode_selector.value
-    if words4test() and _adj and adj_form:
+    if words4test() and _adj:
         adj_ok, _ = gu.check_adjective_test(_adj['Word'], adj_form, mode=_mode)
         gu.process_adjective_completion(_adj, adj_ok, words, words4test(), set_words4test, set_adj_last_passed_mesg, set_adj_cv)
     return
