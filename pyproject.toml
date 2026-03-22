@@ -1,10 +1,10 @@
 [project]
 name = "modern-greek-eee"
-version = "0.1.0"
+version = "0.2.0"
 description = "Greek learning tools for Marimo"
 dependencies = [
     "marimo>=0.19.4",
-    "modern-greek-inflexion==2.0.7",
+    "modern-greek-inflexion-eee==2.0.8",
     "pandas>=2.0.0",
 ]
 

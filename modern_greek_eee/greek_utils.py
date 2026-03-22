@@ -14,10 +14,16 @@ def get_word_by_type(word, wtype):
         return word_type(word)
     return None
 
-def word_kind(word_obj, kind_path):
-    """Extracts specific grammatical forms from a morphological word object."""
+def word_kind(word_obj, kind_path, word_desc=None):
+    """Extracts specific grammatical forms from a morphological word object.
+
+    Args:
+        word_obj: The morphological word object
+        kind_path: List of keys to traverse the morphological dict
+        word_desc: Optional pre-computed word_obj.all() dict to avoid recomputation
+    """
     if word_obj and kind_path:
-        result = word_obj.all()
+        result = word_desc if word_desc is not None else word_obj.all()
         for item in kind_path:
             if isinstance(result, dict) and item in result:
                 result = result[item]
@@ -36,7 +42,7 @@ def get_words(table):
 
 def load_data(file_upload, default_data):
     """Helper for CSV loading or default data fallback."""
-    if file_upload.value:
+    if file_upload.value is not None and len(file_upload.value) > 0:
         contents = file_upload.value[0].contents
         contents = io.BytesIO(contents)
         return pd.read_csv(contents, sep='\t')
@@ -258,9 +264,12 @@ def check_verb_test(verb_base, form_array, tense):
     if not v_obj:
         return False, "Error: Morphological object not found."
 
+    # Cache morphological expansion to avoid 6+ redundant calls in the loop
+    v_desc = v_obj.all()
+
     persons = ['pri', 'sec', 'ter']
     numbers = ['sg', 'pl']
-    
+
     possible_paths = [config.get('path')]
     if 'alt_path' in config:
         possible_paths.append(config['alt_path'])
@@ -269,10 +278,10 @@ def check_verb_test(verb_base, form_array, tense):
 
     path_prefix = None
     for p in possible_paths:
-        if p and word_kind(v_obj, p):
+        if p and word_kind(v_obj, p, v_desc):
             path_prefix = p
             break
-    
+
     if not path_prefix:
         path_prefix = config.get('path')
 
@@ -299,10 +308,10 @@ def check_verb_test(verb_base, form_array, tense):
                     success = False
                     continue
 
-            correct_forms = word_kind(v_obj, path_prefix + [num, pers])
+            correct_forms = word_kind(v_obj, path_prefix + [num, pers], v_desc)
             if not correct_forms or not _ci_match(check_val, correct_forms):
                 success = False
-                available_tenses = list(v_obj.all().keys())
+                available_tenses = list(v_desc.keys())
                 expected = "/".join(correct_forms) if correct_forms else f"unknown (path: {path_prefix}, keys: {available_tenses})"
                 if display_prefix: expected = f"{display_prefix}{expected}"
                 errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{pronoun}]: entered **"{user_val}"**, must be **{expected}**')
@@ -321,5 +330,184 @@ def process_verb_completion(current_verb_val, aorist_ok, future_ok, words, words
             set_current_verb(random.choice(new_words4test))
         else:
             set_current_verb(None)
+        return passed_mesg
+    return ""
+
+# --- Adjective Logic ---
+
+def create_adjective_test_ui(words, words4test_val, current_adj, mode='simple'):
+    """Generates adjective form UI.
+
+    Simple mode: 6 fields (all singulars first: Masc/Fem/Neut Sg, then all plurals: Masc/Fem/Neut Pl)
+    Complex mode: 18 fields (all singulars for all genders × cases, then all plurals for all genders × cases)
+    """
+    form = None
+    md_view = mo.md(f'**The word list for adjective test is empty.**')
+
+    if current_adj:
+        word = current_adj["Word"]
+        translation = current_adj["Translation"]
+
+        # Get field labels from schema to ensure consistency
+        _, field_labels = _adj_field_schema(mode)
+        labels = [f"{label}:" for label in field_labels]
+
+        form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(show_clear_button=True)
+        form.adj_word = word
+        form.adj_mode = mode
+
+        if len(words4test_val):
+            md_view = mo.md(f"""
+            ### Test: Adjective Declension ({len(words4test_val)}/{len(words)})
+            Translation: **{translation}**
+            {form}
+            """)
+    return form, md_view
+
+def _adj_field_schema(mode):
+    """Builds field keys and labels for adjective test based on mode.
+
+    Simple mode: 6 fields (all singulars first: Masc/Fem/Neut Sg, then all plurals: Masc/Fem/Neut Pl)
+    Complex mode: 18 fields (all singulars for all genders × cases, then all plurals for all genders × cases)
+    """
+    gender_config = [('masculine', 'masc', 'Masc'), ('feminine', 'fem', 'Fem'), ('neuter', 'neut', 'Neut')]
+    cases = [('nom', 'Nom'), ('acc', 'Acc'), ('gen', 'Gen')]
+
+    field_keys = []
+    field_labels = []
+
+    if mode == 'simple':
+        # Simple: all singulars first (3 genders), then all plurals (3 genders), nominative only
+        # Singulars: Masc Sg, Fem Sg, Neut Sg
+        for gender_label, _gender_key, gender_short in gender_config:
+            field_keys.append(f'{gender_label}_sg_nom')
+            field_labels.append(f'{gender_short} Sg')
+        # Plurals: Masc Pl, Fem Pl, Neut Pl
+        for gender_label, _gender_key, gender_short in gender_config:
+            field_keys.append(f'{gender_label}_pl_nom')
+            field_labels.append(f'{gender_short} Pl')
+    else:
+        # Complex: all singulars first (all genders × 3 cases), then all plurals
+        # Singulars: Masc Sg (Nom, Acc, Gen), Fem Sg (Nom, Acc, Gen), Neut Sg (Nom, Acc, Gen)
+        for gender_label, _gender_key, gender_short in gender_config:
+            for case_key, case_short in cases:
+                field_keys.append(f'{gender_label}_sg_{case_key}')
+                field_labels.append(f'{gender_short} Sg {case_short}')
+        # Plurals: Masc Pl (Nom, Acc, Gen), Fem Pl (Nom, Acc, Gen), Neut Pl (Nom, Acc, Gen)
+        for gender_label, _gender_key, gender_short in gender_config:
+            for case_key, case_short in cases:
+                field_keys.append(f'{gender_label}_pl_{case_key}')
+                field_labels.append(f'{gender_short} Pl {case_short}')
+
+    return field_keys, field_labels
+
+
+def _adj_expected_forms(adj_base, mode, adj_desc=None):
+    """Builds expected forms dict from morphological library.
+
+    Args:
+        adj_base: The adjective base word
+        mode: 'simple' or 'complex'
+        adj_desc: Optional pre-computed adj_obj.all() dict to avoid recomputation
+
+    Returns dict mapping field_key -> list of acceptable forms.
+    """
+    cases = ['nom'] if mode == 'simple' else ['nom', 'acc', 'gen']
+    gender_config = [('masculine', 'masc'), ('feminine', 'fem'), ('neuter', 'neut')]
+
+    expected = {}
+
+    if adj_desc is None:
+        adj_obj = get_word_by_type(adj_base, 'Adjective')
+        if adj_obj:
+            try:
+                adj_desc = adj_obj.all()
+            except Exception:
+                adj_desc = None
+
+    if adj_desc:
+        try:
+            for gender_label, gender_key in gender_config:
+                for num_key in ['sg', 'pl']:
+                    for case_key in cases:
+                        forms = adj_desc.get('adj', {}).get(num_key, {}).get(gender_key, {}).get(case_key, set())
+                        key = f'{gender_label}_{num_key}_{case_key}'
+                        expected[key] = list(forms) if forms else [adj_base]
+        except Exception:
+            pass
+
+    # Fill missing keys with fallback
+    for gender_label, _gender_key in gender_config:
+        for num_key in ['sg', 'pl']:
+            for case_key in cases:
+                key = f'{gender_label}_{num_key}_{case_key}'
+                if key not in expected:
+                    expected[key] = [adj_base]
+
+    return expected
+
+
+def check_adjective_test(adj_base, form_array, mode='simple'):
+    """Validates adjective forms with mode support.
+
+    Simple mode: validates 6 forms (3 genders × 2 numbers: singular + plural nominative)
+    Complex mode: validates 18 forms (3 genders × 2 numbers × 3 cases: nom, acc, gen)
+
+    Allow partial input - only validate non-empty fields."""
+    if form_array is None or form_array.value is None:
+        return False, ""
+    if hasattr(form_array, 'adj_word') and form_array.adj_word != adj_base:
+        return False, ""
+
+    if hasattr(form_array, 'adj_mode'):
+        mode = form_array.adj_mode
+
+    # Cache morphological expansion to pass to _adj_expected_forms
+    adj_obj = get_word_by_type(adj_base, 'Adjective')
+    adj_desc = None
+    if adj_obj:
+        try:
+            adj_desc = adj_obj.all()
+        except Exception:
+            pass
+
+    field_keys, field_labels = _adj_field_schema(mode)
+    expected_forms = _adj_expected_forms(adj_base, mode, adj_desc)
+
+    success = True
+    has_any_input = False
+    errors = []
+
+    for idx, (field_key, field_label) in enumerate(zip(field_keys, field_labels)):
+        user_val = form_array.value[idx].strip()
+        if not user_val:
+            success = False
+            continue
+
+        has_any_input = True
+        correct_forms = expected_forms.get(field_key, [adj_base])
+
+        if not _ci_match(user_val, correct_forms):
+            success = False
+            correct_text = "/".join(correct_forms)
+            errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{field_label}]: entered **"{user_val}"**, must be **{correct_text}**')
+
+    if not has_any_input:
+        return False, '<span style="color: red; font-weight: bold;">Error!</span> Please fill in at least one gender form'
+
+    return success, "\n\n".join(errors)
+
+def process_adjective_completion(current_adj_val, adj_ok, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_adj):
+    """Updates state and returns message after adjective test completion."""
+    if adj_ok and current_adj_val:
+        new_words4test = [w for w in words4test_val if w["Word"] != current_adj_val["Word"]]
+        set_words4test(new_words4test)
+        remaining, total = len(new_words4test), len(words)
+        passed_mesg = f'<span style="color: green;">Test for <b>"{current_adj_val["Word"]} -- {current_adj_val["Translation"]}"</b> passed.\n\n{remaining} words remaining out of {total}.</span>'
+        set_last_passed_mesg(passed_mesg)
+        if new_words4test:
+            set_current_adj(random.choice(new_words4test))
+        else:
+            set_current_adj(None)
         return passed_mesg
     return ""
