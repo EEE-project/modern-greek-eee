@@ -1,15 +1,23 @@
 # Upstream Bugs - modern-greek-inflexion Library
 
-This document tracks bugs and limitations in the `modern-greek-inflexion` dependency (v2.0.7).
+This document tracks bugs and limitations in the `modern-greek-inflexion` dependency.
 
-**Status**: 2 confirmed bugs, 1 workaround applied in code
+**Current library version**: v2.0.8 (upgraded from v2.0.7 with fixes)
+
+**Status**:
+- Bug #1 (Neuter articles): ✅ **FIXED** in v2.0.8 (PR #2 merged)
+- Bug #2 (σχολάω aorist): ⚠️ Confirmed, pending fix
+- Bug #3 (Imperfect): ✅ Fixed in codebase
 
 ---
 
-## Bug #1: Neuter Article Forms Backwards ⚠️ CONFIRMED
+## Bug #1: Neuter Article Forms Backwards ✅ FIXED in v2.0.8
 
-### Description
-Accusative and genitive forms are swapped for neuter articles in the library.
+### Status: RESOLVED
+This bug was fixed in `modern-greek-inflexion-eee` v2.0.8 via PR #2 (merged March 22, 2026).
+
+### Previous Issue (v2.0.7)
+Accusative and genitive forms were swapped for neuter articles in the library.
 
 ### Impact
 - **Severity**: High (affects language correctness)
@@ -46,21 +54,30 @@ expected_acc = {'του'}  # Wrong, but library returns this
 expected_gen = {'το'}   # Wrong, but library returns this
 ```
 
-### Recommended Fix
-1. **Option A**: File upstream bug with modern-greek-inflexion
-2. **Option B**: Create wrapper layer that corrects article forms on-the-fly:
-   ```python
-   def get_correct_articles(article_obj, case):
-       result = article_obj.all()
-       if article == 'ο' and case == 'neut':
-           result['sg']['neut']['acc'], result['sg']['neut']['gen'] = \
-               result['sg']['neut']['gen'], result['sg']['neut']['acc']
-       return result
-   ```
+### Solution
+This bug is now fixed in `modern-greek-inflexion-eee` v2.0.8.
 
-### Files to Update When Fixed
-- `modern_greek_eee/greek_utils.py` - Remove workaround
-- `tests/test_nouns.py` - Fix test expectations
+**To use the fixed version:**
+Update `pyproject.toml`:
+```toml
+dependencies = [
+    "marimo>=0.19.4",
+    "modern-greek-inflexion-eee==2.0.8",  # Changed from v2.0.7
+    "pandas>=2.0.0",
+]
+```
+
+**Files to Update When Upgrading:**
+- `pyproject.toml` - Update dependency version
+- `tests/test_nouns.py` - Update test expectations (see FIXME in test)
+- `modern_greek_eee/greek_utils.py` - Remove workaround if any
+
+**Current Fix Details:**
+- Library: `modern-greek-inflexion-eee` v2.0.8
+- Fix: GEN/ACC case mapping corrected for definite singular neutral article
+- Before: `{nom: 'το', acc: 'του', gen: 'το'}` ❌
+- After:  `{nom: 'το', acc: 'το', gen: 'του'}` ✅
+- Source: https://github.com/PicusZeus/modern-greek-inflexion/pull/2
 
 ---
 
@@ -186,11 +203,11 @@ No further action needed for this issue.
 
 ### Workaround Status Table
 
-| Bug | Workaround Type | Location | Removable After |
-|-----|-----------------|----------|-----------------|
-| Neuter articles | Test data adjusted | `tests/test_nouns.py` line 68-70 | Library fix + 1 version confirmation |
-| σχολάω aorist | Accept single form only | `modern_greek_eee/greek_utils.py` line 258+ | Library fix + variant dict implementation |
-| Imperfect mood | Path removed | `modern_greek_eee/greek_utils.py` line 21 | Already fixed ✓ |
+| Bug | Workaround Type | Location | Status |
+|-----|-----------------|----------|--------|
+| Neuter articles | Test data adjusted | `tests/test_nouns.py` line 182-200 | ✅ Fixed — upgraded to v2.0.8 |
+| σχολάω aorist | Accept single form only | `modern_greek_eee/greek_utils.py` line 258+ | ⚠️ Pending upstream fix |
+| Imperfect mood | Path corrected | `modern_greek_eee/greek_utils.py` line 21 | ✅ Already fixed in codebase |
 
 ---
 
@@ -265,6 +282,13 @@ If you encounter new issues:
 
 ---
 
-**Last Updated**: March 19, 2026
-**Audit Completed By**: Claude Sonnet 4.6
-**Status**: 2 bugs tracked, 1 fixed, awaiting upstream response
+**Last Updated**: March 22, 2026
+**Status**:
+- Bug #1 (Neuter articles): ✅ FIXED in modern-greek-inflexion-eee v2.0.8
+- Bug #2 (σχολάω aorist): ⚠️ Awaiting upstream fix
+- Bug #3 (Imperfect): ✅ Fixed in codebase
+
+**Next Steps**:
+1. ✅ `pyproject.toml` upgraded to `modern-greek-inflexion-eee==2.0.8`
+2. ✅ Test expectations updated in `tests/test_nouns.py`
+3. Consider addressing Bug #2 if σχολάω verb variants need support

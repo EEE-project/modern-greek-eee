@@ -180,11 +180,15 @@ def test_feminine_with_definite_article():
 
 
 def test_neuter_with_definite_article():
-    """Neuter noun with definite article (το/του/το/τα/τα/των)."""
+    """Neuter noun with definite article (το/το/του/τα/τα/των).
+
+    Neuter nouns have the same form for nominative and accusative.
+    Article forms: NOM/ACC='το', GEN='του' (PR #2 fix in v2.0.8)
+    """
     form = make_form('το παιδί', [
         'το παιδί',         # Def. Sg. Nom. (το)
-        'του παιδί',        # Def. Sg. Acc. (του - accusative is same as genitive article for neuter)
-        'το παιδιού',       # Def. Sg. Gen. (το - genitive article is same as nominative for neuter)
+        'το παιδί',         # Def. Sg. Acc. (το - same as nominative for neuter)
+        'του παιδιού',      # Def. Sg. Gen. (του - different from nominative/accusative)
         'τα παιδιά',        # Def. Pl. Nom.
         'τα παιδιά',        # Def. Pl. Acc.
         'των παιδιών',      # Def. Pl. Gen.
