@@ -402,7 +402,7 @@ def check_verb_test(verb_base, form_array, tense):
                 success = False
                 available_tenses = list(v_desc.keys())
                 expected = "/".join(correct_forms) if correct_forms else f"unknown (path: {path_prefix}, keys: {available_tenses})"
-                if display_prefix: expected = f"{display_prefix}{expected}"
+                if display_prefix: expected = f"{display_prefix} {expected}"
                 errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{pronoun}]: entered **"{user_val}"**, must be **{expected}**')
 
     return success, "\n\n".join(errors)
