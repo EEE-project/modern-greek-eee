@@ -240,6 +240,170 @@ def test_none_form():
     assert ok == False and msg == ""
 
 
+# =============================================================================
+# Complex Mode Tests (18 fields: 3 genders × 2 numbers × 3 cases)
+# =============================================================================
+
+def test_complex_mode_kalos_all_correct():
+    """Complex mode καλός: All 18 forms correct (3 genders × 2 numbers × 3 cases)."""
+    # 18 fields: Sg (Masc Nom, Acc, Gen, Fem Nom, Acc, Gen, Neut Nom, Acc, Gen),
+    #            Pl (Masc Nom, Acc, Gen, Fem Nom, Acc, Gen, Neut Nom, Acc, Gen)
+    form = make_form('καλός', [
+        # Singular
+        'καλός', 'καλό', 'καλού',        # Masc Sg
+        'καλή', 'καλή', 'καλής',         # Fem Sg
+        'καλό', 'καλό', 'καλού',         # Neut Sg
+        # Plural
+        'καλοί', 'καλούς', 'καλών',      # Masc Pl
+        'καλές', 'καλές', 'καλών',       # Fem Pl
+        'καλά', 'καλά', 'καλών'          # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('καλός', form, mode='complex')
+    assert ok == True, f"Should pass with correct complex forms. Error: {msg}"
+
+
+def test_complex_mode_kalos_wrong_one_form():
+    """Complex mode καλός: Wrong single form in genitive."""
+    form = make_form('καλός', [
+        # Singular
+        'καλός', 'καλό', 'καλού',        # Masc Sg
+        'καλή', 'καλή', 'wrong',         # Fem Sg - WRONG at genitive
+        'καλό', 'καλό', 'καλού',         # Neut Sg
+        # Plural
+        'καλοί', 'καλούς', 'καλών',      # Masc Pl
+        'καλές', 'καλές', 'καλών',       # Fem Pl
+        'καλά', 'καλά', 'καλών'          # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('καλός', form, mode='complex')
+    assert ok == False, "Should reject wrong forms"
+    assert 'κ' in msg.lower() or 'fem' in msg.lower(), f"Error should mention wrong field. Got: {msg}"
+
+
+def test_complex_mode_megalos_all_correct():
+    """Complex mode μεγάλος: All 18 forms correct."""
+    form = make_form('μεγάλος', [
+        # Singular
+        'μεγάλος', 'μεγάλο', 'μεγάλου',    # Masc Sg
+        'μεγάλη', 'μεγάλη', 'μεγάλης',     # Fem Sg
+        'μεγάλο', 'μεγάλο', 'μεγάλου',     # Neut Sg
+        # Plural
+        'μεγάλοι', 'μεγάλους', 'μεγάλων',  # Masc Pl
+        'μεγάλες', 'μεγάλες', 'μεγάλων',   # Fem Pl
+        'μεγάλα', 'μεγάλα', 'μεγάλων'      # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('μεγάλος', form, mode='complex')
+    assert ok == True, f"Should pass with correct complex forms. Error: {msg}"
+
+
+def test_complex_mode_case_insensitive():
+    """Complex mode: Case-insensitive matching."""
+    form = make_form('καλός', [
+        # Singular (uppercase)
+        'Καλός', 'Καλό', 'Καλού',        # Masc Sg
+        'Καλή', 'Καλή', 'Καλής',         # Fem Sg
+        'Καλό', 'Καλό', 'Καλού',         # Neut Sg
+        # Plural
+        'Καλοί', 'Καλούς', 'Καλών',      # Masc Pl
+        'Καλές', 'Καλές', 'Καλών',       # Fem Pl
+        'Καλά', 'Καλά', 'Καλών'          # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('καλός', form, mode='complex')
+    assert ok == True, f"Should handle uppercase. Error: {msg}"
+
+
+def test_complex_mode_oraios_all_correct():
+    """Complex mode ωραίος: All 18 forms correct."""
+    form = make_form('ωραίος', [
+        # Singular
+        'ωραίος', 'ωραίο', 'ωραίου',      # Masc Sg
+        'ωραία', 'ωραία', 'ωραίας',       # Fem Sg
+        'ωραίο', 'ωραίο', 'ωραίου',       # Neut Sg
+        # Plural
+        'ωραίοι', 'ωραίους', 'ωραίων',    # Masc Pl
+        'ωραίες', 'ωραίες', 'ωραίων',     # Fem Pl
+        'ωραία', 'ωραία', 'ωραίων'        # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('ωραίος', form, mode='complex')
+    assert ok == True, f"Should pass. Error: {msg}"
+
+
+def test_complex_mode_vathis_all_correct():
+    """Complex mode βαθύς: All 18 forms correct (irregular stem)."""
+    form = make_form('βαθύς', [
+        # Singular
+        'βαθύς', 'βαθύ', 'βαθέος',        # Masc Sg
+        'βαθιά', 'βαθιά', 'βαθιάς',       # Fem Sg
+        'βαθύ', 'βαθύ', 'βαθέος',         # Neut Sg
+        # Plural
+        'βαθείς', 'βαθείς', 'βαθέων',     # Masc Pl
+        'βαθιές', 'βαθιές', 'βαθιών',     # Fem Pl
+        'βαθιά', 'βαθιά', 'βαθέων'        # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('βαθύς', form, mode='complex')
+    assert ok == True, f"Should pass. Error: {msg}"
+
+
+def test_complex_mode_synechis_all_correct():
+    """Complex mode συνεχής: All 18 forms correct (m/f same)."""
+    form = make_form('συνεχής', [
+        # Singular
+        'συνεχής', 'συνεχή', 'συνεχούς',    # Masc Sg
+        'συνεχής', 'συνεχή', 'συνεχούς',    # Fem Sg (same as masc)
+        'συνεχές', 'συνεχές', 'συνεχούς',   # Neut Sg
+        # Plural
+        'συνεχείς', 'συνεχείς', 'συνεχών',  # Masc Pl
+        'συνεχείς', 'συνεχείς', 'συνεχών',  # Fem Pl (same as masc)
+        'συνεχή', 'συνεχή', 'συνεχών'       # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('συνεχής', form, mode='complex')
+    assert ok == True, f"Should pass. Error: {msg}"
+
+
+def test_complex_mode_kurasmenus_all_correct():
+    """Complex mode κουρασμένος: All 18 forms correct (past participle)."""
+    form = make_form('κουρασμένος', [
+        # Singular
+        'κουρασμένος', 'κουρασμένο', 'κουρασμένου',    # Masc Sg
+        'κουρασμένη', 'κουρασμένη', 'κουρασμένης',     # Fem Sg
+        'κουρασμένο', 'κουρασμένο', 'κουρασμένου',     # Neut Sg
+        # Plural
+        'κουρασμένοι', 'κουρασμένους', 'κουρασμένων',  # Masc Pl
+        'κουρασμένες', 'κουρασμένες', 'κουρασμένων',   # Fem Pl
+        'κουρασμένα', 'κουρασμένα', 'κουρασμένων'      # Neut Pl
+    ], mode='complex')
+    ok, msg = check_adjective_test('κουρασμένος', form, mode='complex')
+    assert ok == True, f"Should pass. Error: {msg}"
+
+
+def test_complex_mode_empty_forms():
+    """Complex mode: All fields empty should fail."""
+    form = make_form('καλός', [''] * 18, mode='complex')
+    ok, msg = check_adjective_test('καλός', form, mode='complex')
+    assert ok == False, "Should fail with all empty fields"
+    assert 'Please fill in at least one gender form' in msg, f"Expected message not found. Got: {msg}"
+
+
+def test_complex_mode_partial_input_fails():
+    """Complex mode: Partial input (with empty fields) fails validation.
+
+    Note: The check_adjective_test function requires ALL fields to be filled
+    for the test to pass. Empty fields cause validation to fail. This matches
+    the behavior for simple mode.
+    """
+    form = make_form('καλός', [
+        # Only singular nominative filled
+        'καλός', '', '',
+        'καλή', '', '',
+        'καλό', '', '',
+        # All plurals empty
+        '', '', '',
+        '', '', '',
+        '', '', ''
+    ], mode='complex')
+    ok, msg = check_adjective_test('καλός', form, mode='complex')
+    assert ok == False, "Should fail with empty fields (consistent with simple mode)"
+
+
 if __name__ == '__main__':
     # Run all tests
     import sys
@@ -280,6 +444,18 @@ if __name__ == '__main__':
         test_empty_form,
         test_wrong_form_object,
         test_none_form,
+
+        # Complex Mode: 18 fields
+        test_complex_mode_kalos_all_correct,
+        test_complex_mode_kalos_wrong_one_form,
+        test_complex_mode_megalos_all_correct,
+        test_complex_mode_case_insensitive,
+        test_complex_mode_oraios_all_correct,
+        test_complex_mode_vathis_all_correct,
+        test_complex_mode_synechis_all_correct,
+        test_complex_mode_kurasmenus_all_correct,
+        test_complex_mode_empty_forms,
+        test_complex_mode_partial_input_fails,
     ]
 
     passed = 0
