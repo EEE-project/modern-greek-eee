@@ -298,9 +298,9 @@ VERB_TENSE_CONFIG = {
         'path': ['present', 'active', 'ind'],
         'prefix': 'να',
     },
-    'conditional_simple': {  # Simple Conditional (Υποθετική Απλή) - uses AORIST forms
-        'path': ['aorist', 'active', 'ind'],
-        'alt_path': ['aorist', 'active', 'subj'],
+    'conditional_simple': {  # Simple Conditional (Υποθετική Απλή) - uses CONJUNCTIVE (subjunctive aorist) forms
+        'path': ['conjunctive', 'active', 'ind'],
+        'alt_path': ['conjunctive', 'active', 'subj'],
         'fallback_path': ['present', 'active', 'ind'],
         'prefix': 'αν',
     },

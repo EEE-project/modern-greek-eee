@@ -260,6 +260,130 @@ def test_simple_subjunctive_wrong_prefix():
 
 
 # =============================================================================
+# Simple Conditional (Υποθετική Απλή)
+# Prefix: αν + aorist stem
+# Example: αν λύσω (if I solve - one-time event)
+# =============================================================================
+
+def test_conditional_simple_all_correct():
+    """Simple Conditional: All 6 forms with αν prefix (conjunctive forms)."""
+    form = make_form('λύω', [
+        'αν λύσω',    # εγώ - conjunctive
+        'αν λύσεις',  # εσύ
+        'αν λύσει',   # αυτός
+        'αν λύσουμε', # εμείς (or λύσομε)
+        'αν λύσετε',  # εσείς
+        'αν λύσουν'   # αυτοί (or λύσουνε)
+    ])
+    ok, _ = check_verb_test('λύω', form, 'conditional_simple')
+    assert ok == True, "Should accept conjunctive forms with αν prefix"
+
+
+def test_conditional_simple_wrong_tense():
+    """Simple Conditional: Wrong tense (present instead of conjunctive)."""
+    form = make_form('λύω', [
+        'αν λύω',    # εγώ - WRONG: present, not conjunctive
+        'αν λύσεις', # εσύ - correct conjunctive
+        'αν λύσει',  # αυτός
+        'αν λύσουμε',# εμείς
+        'αν λύσετε', # εσείς
+        'αν λύσουν'  # αυτοί
+    ])
+    ok, msg = check_verb_test('λύω', form, 'conditional_simple')
+    assert ok == False, "Should reject present forms (needs conjunctive)"
+
+
+def test_conditional_simple_wrong_prefix():
+    """Simple Conditional: Wrong prefix (να instead of αν)."""
+    form = make_form('λύω', [
+        'να λύσω',   # εγώ - WRONG PREFIX
+        'να λύσεις', # εσύ
+        'να λύσει',  # αυτός
+        'να λύσουμε',# εμείς
+        'να λύσετε', # εσείς
+        'να λύσουν'  # αυτοί
+    ])
+    ok, msg = check_verb_test('λύω', form, 'conditional_simple')
+    assert ok == False, "Should reject να prefix (needs αν for conditional)"
+
+
+def test_conditional_simple_aorist_verb():
+    """Simple Conditional: With different verb (αρχίζω)."""
+    form = make_form('αρχίζω', [
+        'αν αρχίσω',   # εγώ - conjunctive
+        'αν αρχίσεις', # εσύ
+        'αν αρχίσει',  # αυτός
+        'αν αρχίσουμε',# εμείς
+        'αν αρχίσετε', # εσείς
+        'αν αρχίσουν'  # αυτοί
+    ])
+    ok, _ = check_verb_test('αρχίζω', form, 'conditional_simple')
+    assert ok == True, "Should work with different verb's conjunctive forms"
+
+
+# =============================================================================
+# Continuous Conditional (Υποθετική Συνεχής)
+# Prefix: αν + present stem
+# Example: αν λύω (if I solve - habitual/repeated events)
+# =============================================================================
+
+def test_conditional_continuous_all_correct():
+    """Continuous Conditional: All 6 forms with αν prefix (present forms)."""
+    form = make_form('λύω', [
+        'αν λύω',    # εγώ
+        'αν λύεις',  # εσύ
+        'αν λύει',   # αυτός
+        'αν λύουμε', # εμείς
+        'αν λύετε',  # εσείς
+        'αν λύουν'   # αυτοί
+    ])
+    ok, _ = check_verb_test('λύω', form, 'conditional_continuous')
+    assert ok == True, "Should accept present forms with αν prefix"
+
+
+def test_conditional_continuous_wrong_tense():
+    """Continuous Conditional: Wrong tense (aorist instead of present)."""
+    form = make_form('λύω', [
+        'αν λύσω',   # εγώ - WRONG: aorist, not present
+        'αν λύεις',  # εσύ - correct present
+        'αν λύει',   # αυτός
+        'αν λύουμε', # εμείς
+        'αν λύετε',  # εσείς
+        'αν λύουν'   # αυτοί
+    ])
+    ok, msg = check_verb_test('λύω', form, 'conditional_continuous')
+    assert ok == False, "Should reject aorist forms (needs present)"
+
+
+def test_conditional_continuous_wrong_prefix():
+    """Continuous Conditional: Wrong prefix (να instead of αν)."""
+    form = make_form('λύω', [
+        'να λύω',    # εγώ - WRONG PREFIX
+        'να λύεις',  # εσύ
+        'να λύει',   # αυτός
+        'να λύουμε', # εμείς
+        'να λύετε',  # εσείς
+        'να λύουν'   # αυτοί
+    ])
+    ok, msg = check_verb_test('λύω', form, 'conditional_continuous')
+    assert ok == False, "Should reject να prefix (needs αν for conditional)"
+
+
+def test_conditional_continuous_present_verb():
+    """Continuous Conditional: With different verb (αρχίζω)."""
+    form = make_form('αρχίζω', [
+        'αν αρχίζω',  # εγώ
+        'αν αρχίζεις',# εσύ
+        'αν αρχίζει', # αυτός
+        'αν αρχίζουμε',# εμείς
+        'αν αρχίζετε',# εσείς
+        'αν αρχίζουν' # αυτοί
+    ])
+    ok, _ = check_verb_test('αρχίζω', form, 'conditional_continuous')
+    assert ok == True, "Should work with different verb's present forms"
+
+
+# =============================================================================
 # Irregular Verb: λέω (to say)
 # =============================================================================
 
@@ -358,6 +482,18 @@ if __name__ == '__main__':
         # Simple Subjunctive
         test_simple_subjunctive_all_correct,
         test_simple_subjunctive_wrong_prefix,
+
+        # Conditional Simple
+        test_conditional_simple_all_correct,
+        test_conditional_simple_wrong_tense,
+        test_conditional_simple_wrong_prefix,
+        test_conditional_simple_aorist_verb,
+
+        # Conditional Continuous
+        test_conditional_continuous_all_correct,
+        test_conditional_continuous_wrong_tense,
+        test_conditional_continuous_wrong_prefix,
+        test_conditional_continuous_present_verb,
 
         # Irregular verbs
         test_irregular_future,
