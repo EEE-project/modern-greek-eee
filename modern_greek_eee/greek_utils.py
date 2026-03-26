@@ -5,6 +5,85 @@ import random
 import modern_greek_inflexion_eee as modern_greek_inflexion
 from modern_greek_inflexion_eee import Article, Noun, Verb, Adjective
 
+# --- Tense Labels ---
+# Tense terminology consolidation with context prefixes for field labels
+# Context prefixes (θα, να, αν) shown in UI labels as "εγώ θα", "εγώ να", "εγώ αν"
+# Users input only the verb form, not the prefix
+TENSE_LABELS = {
+    'present': {
+        'greek': 'Ενεστώτας',
+        'english': 'Present',
+        'feedback': 'Present',
+        'dropdown': 'Ενεστώτας (Present)',
+        'context_prefix': '',  # No prefix context
+    },
+    'imperfect': {
+        'greek': 'Παρατατικός',
+        'english': 'Imperfect',
+        'feedback': 'Imperfect',
+        'dropdown': 'Παρατατικός (Imperfect)',
+        'context_prefix': '',
+    },
+    'past_continuous': {
+        'greek': 'Συνεχής Παρακείμενος',
+        'english': 'Past Continuous',
+        'feedback': 'Past Continuous',
+        'dropdown': 'Συνεχής Παρακείμενος (Past Continuous)',
+        'context_prefix': '',
+    },
+    'aorist': {
+        'greek': 'Αόριστος',
+        'english': 'Aorist',
+        'feedback': 'Aorist',
+        'dropdown': 'Αόριστος (Aorist)',
+        'context_prefix': '',
+    },
+    'future': {
+        'greek': 'Απλός Μέλλοντας',
+        'english': 'Simple Future',
+        'feedback': 'Simple Future',
+        'dropdown': 'Απλός Μέλλοντας (Simple Future)',
+        'context_prefix': 'θα',  # Field labels: "εγώ θα", "εσύ θα", etc.
+    },
+    'future_continuous': {
+        'greek': 'Συνεχής Μέλλοντας',
+        'english': 'Continuous Future',
+        'feedback': 'Continuous Future',
+        'dropdown': 'Συνεχής Μέλλοντας (Continuous Future)',
+        'context_prefix': 'θα',
+    },
+    'subjunctive_simple': {
+        'greek': 'Υποτακτική Απλή',
+        'english': 'Simple Subjunctive',
+        'feedback': 'Simple Subjunctive',
+        'dropdown': 'Υποτακτική Απλή (Simple Subjunctive)',
+        'context_prefix': 'να',  # Field labels: "εγώ να", "εσύ να", etc.
+    },
+    'subjunctive_continuous': {
+        'greek': 'Υποτακτική Συνεχής',
+        'english': 'Continuous Subjunctive',
+        'feedback': 'Continuous Subjunctive',
+        'dropdown': 'Υποτακτική Συνεχής (Continuous Subjunctive)',
+        'context_prefix': 'να',
+    },
+    'conditional_simple': {
+        'greek': 'Υποθετική Απλή',
+        'english': 'Simple Conditional',
+        'feedback': 'Simple Conditional',
+        'dropdown': 'Υποθετική Απλή (Simple Conditional)',
+        'context_prefix': 'αν',  # Field labels: "εγώ αν", "εσύ αν", etc. (one-time events)
+        'note': 'Uses aorist forms for one-time events (e.g., "Αν διαβάσεις")',
+    },
+    'conditional_continuous': {
+        'greek': 'Υποθετική Συνεχής',
+        'english': 'Continuous Conditional',
+        'feedback': 'Continuous Conditional',
+        'dropdown': 'Υποθετική Συνεχής (Continuous Conditional)',
+        'context_prefix': 'αν',  # Field labels: "εγώ αν", "εσύ αν", etc. (habitual events)
+        'note': 'Uses present forms for habitual/regular events (e.g., "Αν διαβάζεις")',
+    },
+}
+
 # --- Core Logic ---
 
 def get_word_by_type(word, wtype):
@@ -203,21 +282,31 @@ VERB_TENSE_CONFIG = {
         'path': ['conjunctive', 'active', 'ind'],
         'alt_path': ['conjunctive', 'active', 'subj'],
         'fallback_path': ['present', 'active', 'ind'],
-        'prefix': 'θα ',
+        'prefix': 'θα',
     },
     'future_continuous': {  # Continuous Future (Συνεχής Μέλλοντας)
         'path': ['present', 'active', 'ind'],
-        'prefix': 'θα ',
+        'prefix': 'θα',
     },
     'subjunctive_simple': {  # Simple Subjunctive (Στιγμιαία Υποτακτική)
         'path': ['conjunctive', 'active', 'ind'],
         'alt_path': ['conjunctive', 'active', 'subj'],
         'fallback_path': ['present', 'active', 'ind'],
-        'prefix': 'να ',
+        'prefix': 'να',
     },
     'subjunctive_continuous': {  # Continuous Subjunctive (Συνεχής Υποτακτική)
         'path': ['present', 'active', 'ind'],
-        'prefix': 'να ',
+        'prefix': 'να',
+    },
+    'conditional_simple': {  # Simple Conditional (Υποθετική Απλή) - uses AORIST forms
+        'path': ['aorist', 'active', 'ind'],
+        'alt_path': ['aorist', 'active', 'subj'],
+        'fallback_path': ['present', 'active', 'ind'],
+        'prefix': 'αν',
+    },
+    'conditional_continuous': {  # Continuous Conditional (Υποθετική Συνεχής) - uses PRESENT forms
+        'path': ['present', 'active', 'ind'],
+        'prefix': 'αν',
     }
 }
 
