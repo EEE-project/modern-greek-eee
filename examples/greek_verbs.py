@@ -57,18 +57,13 @@ def _(language_selector, mo, t_ui):
 
 
 @app.cell(hide_code=True)
-def _(language_selector, mo, t_ui):
+def _(gu, language_selector, mo, t_ui):
     _lang = language_selector.value
+    # Build dropdown options from TENSE_LABELS
+    _tense_options = {gu.TENSE_LABELS[k]['dropdown']: k for k in gu.TENSE_LABELS}
     tense_selector = mo.ui.dropdown(
-        options={
-            "Ενεστώτας (Present)": "present",
-            "Παρατατικός (Imperfect)": "imperfect",
-            "Αόριστος (Aorist)": "aorist",
-            "Απλός Μέλλοντας (Simple Future)": "future",
-            "Συνεχής Μέλλοντας (Continuous Future)": "future_continuous",
-            "Απλή Υποτακτική (Simple Subjunctive)": "subjunctive_simple",
-        },
-        value="Αόριστος (Aorist)",
+        options=_tense_options,
+        value=gu.TENSE_LABELS['aorist']['dropdown'],
         label=t_ui("select_tenses", _lang),
     )
     mo.md(f"""
@@ -84,14 +79,8 @@ def _(cv, gu, language_selector, mo, t_ui, tense_selector, verb_form, words, wor
     # Tense Test View
     _lang = language_selector.value
     _tense_key = tense_selector.value
-    _TENSE_LABELS = {
-        "present": "Ενεστώτας",
-        "imperfect": "Παρατατικός",
-        "aorist": "Αόριστος",
-        "future": "Απλός Μέλλοντας",
-        "future_continuous": "Συνεχής Μέλλοντας",
-        "subjunctive_simple": "Απλή Υποτακτική",
-    }
+    # Use TENSE_LABELS from greek_utils
+    _TENSE_LABELS = {k: gu.TENSE_LABELS[k]['greek'] for k in gu.TENSE_LABELS}
 
     if not words4test():
         _view = mo.md(t_ui("empty_list", _lang))
@@ -182,14 +171,8 @@ def _(gu, tense_selector, words, words4test):
     # Setup test form — derived directly from words4test state (like working version)
     cv = words4test()[0] if words4test() else None
     _tense_key = tense_selector.value
-    _TENSE_UI_LABELS = {
-        "present": "Present (Ενεστώτας)",
-        "imperfect": "Imperfect (Παρατατικός)",
-        "aorist": "Aorist (Αόριστος)",
-        "future": "Simple Future (Απλός Μέλλοντας)",
-        "future_continuous": "Continuous Future (Συνεχής Μέλλοντας)",
-        "subjunctive_simple": "Simple Subjunctive (Απλή Υποτακτική)",
-    }
+    # Use TENSE_LABELS from greek_utils
+    _TENSE_UI_LABELS = {k: f"{gu.TENSE_LABELS[k]['english']} ({gu.TENSE_LABELS[k]['greek']})" for k in gu.TENSE_LABELS}
     _ui_label = _TENSE_UI_LABELS.get(_tense_key, _tense_key) if _tense_key else "Select a tense"
     verb_form, _verb_md = gu.create_verb_test_ui(_ui_label, words, words4test(), cv)
     return cv, verb_form
