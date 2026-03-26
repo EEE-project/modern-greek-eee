@@ -2,8 +2,8 @@ import marimo as mo
 import pandas as pd
 import io
 import random
-import modern_greek_inflexion
-from modern_greek_inflexion import Article, Noun, Verb
+import modern_greek_inflexion_eee as modern_greek_inflexion
+from modern_greek_inflexion_eee import Article, Noun, Verb, Adjective
 
 # --- Core Logic ---
 
