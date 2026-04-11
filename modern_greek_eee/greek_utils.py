@@ -129,6 +129,14 @@ def load_data(file_upload, default_data):
 
 # --- Noun Logic ---
 
+def _is_pluralia_tantum(noun_word):
+    """Return True if the noun has no singular forms in the inflection database."""
+    n_obj = get_word_by_type(noun_word, 'Noun')
+    n_desc = n_obj.all() if n_obj else {}
+    noun_type = list(n_desc.keys())[0] if n_desc else None
+    sg_nom = word_kind(n_obj, [noun_type, 'sg', 'nom']) if noun_type else None
+    return not sg_nom or sg_nom == {''}
+
 def create_noun_test_ui(words, mode='simple'):
     """Creates a UI form for testing noun declension."""
     word = None
@@ -139,17 +147,33 @@ def create_noun_test_ui(words, mode='simple'):
         word = item['Word']
         translation = item['Translation']
 
+        word_parts = word.split()
+        noun_article_only = word_parts[0].strip() if len(word_parts) > 1 else None
+        noun_word_only = word_parts[1].strip() if len(word_parts) > 1 else word.strip()
+        # Treat as pluralia tantum if the article is plural (τα/οι) OR if the library
+        # reports no singular forms.
+        is_pluralia_tantum = noun_article_only in ('τα', 'οι') or _is_pluralia_tantum(noun_word_only)
+
         if mode == 'simple':
-            labels = ['Sg. Nom.:', 'Sg. Acc.:', 'Sg. Gen.:', 'Pl. Nom.:', 'Pl. Acc.:', 'Pl. Gen.:']
+            if is_pluralia_tantum:
+                labels = ['Pl. Nom.:', 'Pl. Acc.:', 'Pl. Gen.:']
+            else:
+                labels = ['Sg. Nom.:', 'Sg. Acc.:', 'Sg. Gen.:', 'Pl. Nom.:', 'Pl. Acc.:', 'Pl. Gen.:']
         else:
-            labels = [
-                'Def. Sg. Nom.:', 'Def. Sg. Acc.:', 'Def. Sg. Gen.:',
-                'Def. Pl. Nom.:', 'Def. Pl. Acc.:', 'Def. Pl. Gen.:',
-                'Ind. Sg. Nom.:', 'Ind. Sg. Acc.:', 'Ind. Sg. Gen.:'
-            ]
-        
+            if is_pluralia_tantum:
+                labels = [
+                    'Def. Pl. Nom.:', 'Def. Pl. Acc.:', 'Def. Pl. Gen.:',
+                ]
+            else:
+                labels = [
+                    'Def. Sg. Nom.:', 'Def. Sg. Acc.:', 'Def. Sg. Gen.:',
+                    'Def. Pl. Nom.:', 'Def. Pl. Acc.:', 'Def. Pl. Gen.:',
+                    'Ind. Sg. Nom.:', 'Ind. Sg. Acc.:', 'Ind. Sg. Gen.:'
+                ]
+
         noun_form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(label="Check", show_clear_button=True)
         noun_form.test_word = word
+        noun_form.is_pluralia_tantum = is_pluralia_tantum
     return word, translation, noun_form
 
 def _ci_match(value, forms):
@@ -159,11 +183,11 @@ def _ci_match(value, forms):
     value_lower = value.lower()
     return any(f.lower() == value_lower for f in forms)
 
-def _noun_declension_test(user_input, declension, noun_base, noun_descr, article_descr):
+def _noun_declension_test(user_input, declension, noun_base, noun_descr, article_descr, article_gender=None):
     """Internal validator for a single noun form."""
     if not user_input:
         return False
-    
+
     parts = user_input.split()
     if len(parts) > 1:
         noun_article = parts[0].strip()
@@ -172,11 +196,22 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
         noun_article = ''
         noun_word = user_input.strip()
 
-    noun_type = list(noun_descr.keys())[0]
-    noun_path = [noun_type] + declension
+    # When article_gender is known, try it first; iterate all gender keys until forms are found.
+    # Use noun_descr directly — it's already the correct description (incl. neuter sg lookup).
+    gender_keys = list(noun_descr.keys())
+    if article_gender and article_gender in noun_descr:
+        gender_keys = [article_gender] + [k for k in gender_keys if k != article_gender]
+    noun_type = gender_keys[0]
 
-    # Validate noun form
-    correct_noun_forms = word_kind(get_word_by_type(noun_base, 'Noun'), noun_path)
+    correct_noun_forms = None
+    for gk in gender_keys:
+        result = noun_descr.get(gk, {})
+        for item in declension:
+            result = result.get(item) if isinstance(result, dict) else None
+        if result:
+            noun_type = gk
+            correct_noun_forms = result
+            break
     word_is_correct = _ci_match(noun_word, correct_noun_forms)
 
     if article_descr is None:
@@ -187,7 +222,8 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
             print(f'<span style="color: red; font-weight: bold;">Error!</span> [{case_label}]: entered **"{noun_word}"**, must be **{correct_noun_forms}**\n\n')
             return False
 
-    art_path = [declension[0], noun_type, declension[1]]
+    art_type = article_gender if article_gender is not None else noun_type
+    art_path = [declension[0], art_type, declension[1]]
     article_forms = word_kind(article_descr, art_path)
 
     if _ci_match(noun_article, article_forms) and word_is_correct:
@@ -208,26 +244,52 @@ def check_noun_test(noun, noun_form, mode='simple'):
         return False
 
     noun_array = noun.split()
+    noun_article = noun_array[0].strip() if len(noun_array) > 1 else None
     noun_word = noun_array[1].strip() if len(noun_array) > 1 else noun.strip()
-    
-    v_obj = get_word_by_type(noun_word, 'Noun')
-    if not v_obj:
-        return False
-    descr = v_obj.all()
 
-    cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-    
+    # For 'τα X' entries (neuter plural), the headword is the plural form.
+    # The library may return the feminine reading; look up neuter sg (word[:-1]+'ο') instead.
+    v_obj = None
+    descr = None
+    if noun_article == 'τα':
+        candidate = noun_word[:-1] + 'ο'
+        candidate_obj = get_word_by_type(candidate, 'Noun')
+        if candidate_obj:
+            candidate_desc = candidate_obj.all()
+            if list(candidate_desc.keys())[0] == 'neut':
+                v_obj, descr = candidate_obj, candidate_desc
+    if v_obj is None:
+        v_obj = get_word_by_type(noun_word, 'Noun')
+        if not v_obj:
+            return False
+        descr = v_obj.all()
+
+    is_pluralia_tantum = getattr(noun_form, 'is_pluralia_tantum', False)
+    all_cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+    pl_cases = [['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+    cases = pl_cases if is_pluralia_tantum else all_cases
+
     if mode == 'simple':
-        checks = [_noun_declension_test(val, case, noun_word, descr, None) 
+        checks = [_noun_declension_test(val, case, noun_word, descr, None)
                   for val, case in zip(noun_form.value, cases)]
         return all(checks)
     else:
+        noun_type = list(descr.keys())[0] if descr else 'masc'
+        # Article('ο') covers ALL definite forms (sg/pl × masc/fem/neut).
+        # article_gender + declension path select the right form during validation.
+        # 'οι' gender is ambiguous — resolve from noun_type.
+        _article_to_gender = {'ο': 'masc', 'η': 'fem', 'το': 'neut', 'τα': 'neut', 'οι': noun_type}
+        article_gender = _article_to_gender.get(noun_article) if noun_article else None
         art_def = Article('ο')
         art_indef = Article('ένας')
-        def_checks = [_noun_declension_test(val, case, noun_word, descr, art_def) 
-                      for val, case in zip(noun_form.value[:6], cases)]
-        indef_checks = [_noun_declension_test(val, case, noun_word, descr, art_indef) 
-                        for val, case in zip(noun_form.value[6:], cases[:3])]
+        if is_pluralia_tantum:
+            def_checks = [_noun_declension_test(val, case, noun_word, descr, art_def, article_gender)
+                          for val, case in zip(noun_form.value, pl_cases)]
+            return all(def_checks)
+        def_checks = [_noun_declension_test(val, case, noun_word, descr, art_def, article_gender)
+                      for val, case in zip(noun_form.value[:6], all_cases)]
+        indef_checks = [_noun_declension_test(val, case, noun_word, descr, art_indef, article_gender)
+                        for val, case in zip(noun_form.value[6:], all_cases[:3])]
         return all(def_checks) and all(indef_checks)
 
 def process_noun_test(noun, noun_form, words, words4test, set_words4test, set_last_passed_mesg, set_current_noun=None, mode='simple'):
@@ -338,6 +400,20 @@ def create_verb_test_ui(title, words, words4test_val, current_verb):
             """)
     return form, md_view
 
+def _patch_voice(path, v_desc):
+    """Replace voice element in path[1] with the voice actually present in v_desc."""
+    if not path or len(path) < 2:
+        return path
+    tense_data = v_desc.get(path[0], {})
+    for voice in ('active', 'middle', 'passive'):
+        if voice in tense_data:
+            if voice == path[1]:
+                return path
+            patched = list(path)
+            patched[1] = voice
+            return patched
+    return path
+
 def check_verb_test(verb_base, form_array, tense):
     """Validates verb forms using modular tense configuration."""
     if form_array is None or form_array.value is None:
@@ -359,11 +435,11 @@ def check_verb_test(verb_base, form_array, tense):
     persons = ['pri', 'sec', 'ter']
     numbers = ['sg', 'pl']
 
-    possible_paths = [config.get('path')]
+    possible_paths = [_patch_voice(config.get('path'), v_desc)]
     if 'alt_path' in config:
-        possible_paths.append(config['alt_path'])
+        possible_paths.append(_patch_voice(config['alt_path'], v_desc))
     if 'fallback_path' in config:
-        possible_paths.append(config['fallback_path'])
+        possible_paths.append(_patch_voice(config['fallback_path'], v_desc))
 
     path_prefix = None
     for p in possible_paths:

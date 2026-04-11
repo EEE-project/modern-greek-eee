@@ -3,19 +3,19 @@
 # dependencies = [
 #     "marimo>=0.19.4",
 #     "mcp==1.25.0",
-#     "modern-greek-eee @ git+https://github.com/EEE-project/modern-greek-eee.git",
-#     "modern-greek-inflexion-eee @ git+https://github.com/EEE-project/modern-greek-inflexion-eee.git",
+#     "modern-greek-eee @ git+https://codeberg.org/EEE-project/modern-greek-eee.git",
+#     "modern-greek-inflexion-eee @ git+https://codeberg.org/EEE-project/modern-greek-inflexion-eee.git",
 #     "pandas==2.3.3",
 # ]
 #
 # [tool.uv.sources]
-# modern-greek-eee = { git = "https://github.com/EEE-project/modern-greek-eee" }
-# modern-greek-inflexion-eee = { git = "https://github.com/EEE-project/modern-greek-inflexion-eee" }
+# modern-greek-eee = { git = "https://codeberg.org/EEE-project/modern-greek-eee" }
+# modern-greek-inflexion-eee = { git = "https://codeberg.org/EEE-project/modern-greek-inflexion-eee" }
 # ///
 
 import marimo
 
-__generated_with = "0.20.4"
+__generated_with = "0.23.1"
 app = marimo.App(
     width="medium",
     css_file="/usr/local/_marimo/custom.css",
@@ -290,11 +290,7 @@ def _():
     import random
     import marimo as mo
 
-    try:
-        from modern_greek_eee import greek_utils as gu
-    except ImportError:
-        import greek_utils as gu
-
+    from modern_greek_eee import greek_utils as gu
     return gu, mo, random
 
 
