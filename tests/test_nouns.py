@@ -17,11 +17,12 @@ from unittest.mock import Mock
 from modern_greek_eee.greek_utils import check_noun_test
 
 
-def make_form(word, values):
+def make_form(word, values, is_pluralia_tantum=False):
     """Helper to create mock form_array object."""
     form = Mock()
     form.value = values
     form.test_word = word
+    form.is_pluralia_tantum = is_pluralia_tantum
     return form
 
 
@@ -200,6 +201,40 @@ def test_neuter_with_definite_article():
     assert ok == True, "Should pass"
 
 
+def test_common_gender_masculine_article():
+    """Common-gender noun used as masculine (ο μηχανικός) — article mode must accept ο forms."""
+    form = make_form('ο μηχανικός', [
+        'ο μηχανικός',      # Def. Sg. Nom.
+        'τον μηχανικό',     # Def. Sg. Acc.
+        'του μηχανικού',    # Def. Sg. Gen.
+        'οι μηχανικοί',     # Def. Pl. Nom.
+        'τους μηχανικούς',  # Def. Pl. Acc.
+        'των μηχανικών',    # Def. Pl. Gen.
+        'ένας μηχανικός',   # Indef. Sg. Nom.
+        'έναν μηχανικό',    # Indef. Sg. Acc.
+        'ενός μηχανικού',   # Indef. Sg. Gen.
+    ])
+    ok = check_noun_test('ο μηχανικός', form, mode='article')
+    assert ok == True, "ο μηχανικός: masculine article forms should pass"
+
+
+def test_common_gender_feminine_article():
+    """Common-gender noun used as feminine (η μηχανικός) — article mode must accept η forms."""
+    form = make_form('η μηχανικός', [
+        'η μηχανικός',      # Def. Sg. Nom.
+        'την μηχανικό',     # Def. Sg. Acc.
+        'της μηχανικού',    # Def. Sg. Gen.
+        'οι μηχανικοί',     # Def. Pl. Nom.
+        'τις μηχανικούς',   # Def. Pl. Acc.
+        'των μηχανικών',    # Def. Pl. Gen.
+        'μια μηχανικός',    # Indef. Sg. Nom.
+        'μια μηχανικό',     # Indef. Sg. Acc.
+        'μιας μηχανικού',   # Indef. Sg. Gen.
+    ])
+    ok = check_noun_test('η μηχανικός', form, mode='article')
+    assert ok == True, "η μηχανικός: feminine article forms should pass"
+
+
 def test_article_mode_wrong_genitive():
     """Article mode: Wrong genitive form."""
     form = make_form('ο άνθρωπος', [
@@ -267,6 +302,8 @@ if __name__ == '__main__':
         test_feminine_with_definite_article,
         test_neuter_with_definite_article,
         test_article_mode_wrong_genitive,
+        test_common_gender_masculine_article,
+        test_common_gender_feminine_article,
 
         # General
         test_empty_form,

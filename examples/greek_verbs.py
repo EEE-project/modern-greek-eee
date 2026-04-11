@@ -3,19 +3,19 @@
 # dependencies = [
 #     "marimo>=0.19.4",
 #     "mcp==1.25.0",
-#     "modern-greek-eee @ git+https://github.com/EEE-project/modern-greek-eee.git",
-#     "modern-greek-inflexion-eee @ git+https://github.com/EEE-project/modern-greek-inflexion-eee.git",
+#     "modern-greek-eee @ git+https://codeberg.org/EEE-project/modern-greek-eee.git",
+#     "modern-greek-inflexion-eee @ git+https://codeberg.org/EEE-project/modern-greek-inflexion-eee.git",
 #     "pandas==2.3.3",
 # ]
 #
 # [tool.uv.sources]
-# modern-greek-eee = { git = "https://github.com/EEE-project/modern-greek-eee" }
-# modern-greek-inflexion-eee = { git = "https://github.com/EEE-project/modern-greek-inflexion-eee" }
+# modern-greek-eee = { git = "https://codeberg.org/EEE-project/modern-greek-eee" }
+# modern-greek-inflexion-eee = { git = "https://codeberg.org/EEE-project/modern-greek-inflexion-eee" }
 # ///
 
 import marimo
 
-__generated_with = "0.19.7"
+__generated_with = "0.23.1"
 app = marimo.App(
     width="medium",
     css_file="/usr/local/_marimo/custom.css",
@@ -75,7 +75,17 @@ def _(gu, language_selector, mo, t_ui):
 
 
 @app.cell(hide_code=True)
-def _(cv, gu, language_selector, mo, t_ui, tense_selector, verb_form, words, words4test):
+def _(
+    cv,
+    gu,
+    language_selector,
+    mo,
+    t_ui,
+    tense_selector,
+    verb_form,
+    words,
+    words4test,
+):
     # Tense Test View
     _lang = language_selector.value
     _tense_key = tense_selector.value
@@ -178,8 +188,6 @@ def _(gu, tense_selector, words, words4test):
     return cv, verb_form
 
 
-# === Configuration and helpers (hidden) ===
-
 @app.cell(hide_code=True)
 def _():
     UI_STRINGS = {
@@ -253,11 +261,7 @@ def _():
 
     import marimo as mo
 
-    try:
-        from modern_greek_eee import greek_utils as gu
-    except ImportError:
-        import greek_utils as gu
-
+    from modern_greek_eee import greek_utils as gu
     return gu, mo
 
 
