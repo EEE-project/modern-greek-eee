@@ -280,6 +280,70 @@ def test_none_form():
     assert ok == False, "Should fail with None form"
 
 
+# =============================================================================
+# Nouns with missing gen.pl (library returns {''}) — active_cases must skip it
+# =============================================================================
+
+def make_form_with_active_cases(word, values, active_cases, is_pluralia_tantum=False):
+    """Helper for forms that carry active_cases (as created by create_noun_test_ui)."""
+    form = Mock()
+    form.value = values
+    form.test_word = word
+    form.is_pluralia_tantum = is_pluralia_tantum
+    form.active_cases = active_cases
+    return form
+
+
+def test_noun_without_gen_pl_simple_correct():
+    """κούτα: 5-field form (pl.gen skipped) with correct values passes."""
+    active = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc']]
+    form = make_form_with_active_cases('η κούτα', [
+        'κούτα', 'κούτα', 'κούτας', 'κούτες', 'κούτες'
+    ], active)
+    ok = check_noun_test('η κούτα', form, mode='simple')
+    assert ok == True, "Should pass without gen.pl field"
+
+
+def test_noun_without_gen_pl_simple_wrong():
+    """κούτα: wrong sg.gen should still fail."""
+    active = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc']]
+    form = make_form_with_active_cases('η κούτα', [
+        'κούτα', 'κούτα', 'wrong', 'κούτες', 'κούτες'
+    ], active)
+    ok = check_noun_test('η κούτα', form, mode='simple')
+    assert ok == False, "Should fail with wrong sg.gen"
+
+
+def test_nfd_accent_normalization():
+    """NFD-encoded input (combining accent) must match NFC library forms."""
+    import unicodedata
+    from modern_greek_eee.greek_utils import _ci_match
+    nfc = 'κούτες'
+    nfd = unicodedata.normalize('NFD', nfc)
+    assert nfc != nfd, "test pre-condition: NFD and NFC must differ"
+    assert _ci_match(nfd, {nfc}), "NFD input must match NFC library form"
+    assert _ci_match(nfc, {nfd}), "NFC input must match NFD library form"
+
+    # Also verify via full check_noun_test with a feminine noun (avoids τα special path)
+    active = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc']]
+    nfd_pl = unicodedata.normalize('NFD', 'κούτες')
+    form = make_form_with_active_cases('η κούτα', [
+        'κούτα', 'κούτα', 'κούτας', nfd_pl, nfd_pl
+    ], active)
+    ok = check_noun_test('η κούτα', form, mode='simple')
+    assert ok == True, "NFD-encoded plural input should pass noun test"
+
+
+def test_garsoniera_without_gen_pl():
+    """γκαρσονιέρα: 5-field form (pl.gen skipped) with correct values passes."""
+    active = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc']]
+    form = make_form_with_active_cases('η γκαρσονιέρα', [
+        'γκαρσονιέρα', 'γκαρσονιέρα', 'γκαρσονιέρας', 'γκαρσονιέρες', 'γκαρσονιέρες'
+    ], active)
+    ok = check_noun_test('η γκαρσονιέρα', form, mode='simple')
+    assert ok == True, "Should pass without gen.pl field"
+
+
 if __name__ == '__main__':
     import sys
 
@@ -309,6 +373,11 @@ if __name__ == '__main__':
         test_empty_form,
         test_wrong_word_stored,
         test_none_form,
+
+        # Missing gen.pl
+        test_noun_without_gen_pl_simple_correct,
+        test_noun_without_gen_pl_simple_wrong,
+        test_garsoniera_without_gen_pl,
     ]
 
     passed = 0

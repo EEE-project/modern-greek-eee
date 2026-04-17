@@ -2,6 +2,7 @@ import marimo as mo
 import pandas as pd
 import io
 import random
+import unicodedata
 import modern_greek_inflexion_eee as modern_greek_inflexion
 from modern_greek_inflexion_eee import Article, Noun, Verb, Adjective
 
@@ -137,6 +138,30 @@ def _is_pluralia_tantum(noun_word):
     sg_nom = word_kind(n_obj, [noun_type, 'sg', 'nom']) if noun_type else None
     return not sg_nom or sg_nom == {''}
 
+
+def _active_noun_cases(noun_word, is_pluralia_tantum):
+    """Return the subset of cases that have non-empty forms for this noun."""
+    all_cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+    pl_cases  = [['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+    candidates = pl_cases if is_pluralia_tantum else all_cases
+    v_obj = get_word_by_type(noun_word, 'Noun')
+    if not v_obj:
+        return candidates
+    descr = v_obj.all()
+    active = []
+    for case in candidates:
+        forms = None
+        for gk in descr:
+            result = descr[gk]
+            for item in case:
+                result = result.get(item) if isinstance(result, dict) else None
+            if result and result != {''}:
+                forms = result
+                break
+        if forms:
+            active.append(case)
+    return active
+
 def create_noun_test_ui(words, mode='simple'):
     """Creates a UI form for testing noun declension."""
     word = None
@@ -154,34 +179,41 @@ def create_noun_test_ui(words, mode='simple'):
         # reports no singular forms.
         is_pluralia_tantum = noun_article_only in ('τα', 'οι') or _is_pluralia_tantum(noun_word_only)
 
+        active_cases = _active_noun_cases(noun_word_only, is_pluralia_tantum)
+
+        _simple_labels = {
+            ('sg', 'nom'): 'Sg. Nom.:', ('sg', 'acc'): 'Sg. Acc.:', ('sg', 'gen'): 'Sg. Gen.:',
+            ('pl', 'nom'): 'Pl. Nom.:', ('pl', 'acc'): 'Pl. Acc.:', ('pl', 'gen'): 'Pl. Gen.:',
+        }
+        _def_labels = {
+            ('sg', 'nom'): 'Def. Sg. Nom.:', ('sg', 'acc'): 'Def. Sg. Acc.:', ('sg', 'gen'): 'Def. Sg. Gen.:',
+            ('pl', 'nom'): 'Def. Pl. Nom.:', ('pl', 'acc'): 'Def. Pl. Acc.:', ('pl', 'gen'): 'Def. Pl. Gen.:',
+        }
+        _indef_labels = {
+            ('sg', 'nom'): 'Ind. Sg. Nom.:', ('sg', 'acc'): 'Ind. Sg. Acc.:', ('sg', 'gen'): 'Ind. Sg. Gen.:',
+        }
+
         if mode == 'simple':
-            if is_pluralia_tantum:
-                labels = ['Pl. Nom.:', 'Pl. Acc.:', 'Pl. Gen.:']
-            else:
-                labels = ['Sg. Nom.:', 'Sg. Acc.:', 'Sg. Gen.:', 'Pl. Nom.:', 'Pl. Acc.:', 'Pl. Gen.:']
+            labels = [_simple_labels[tuple(c)] for c in active_cases]
         else:
-            if is_pluralia_tantum:
-                labels = [
-                    'Def. Pl. Nom.:', 'Def. Pl. Acc.:', 'Def. Pl. Gen.:',
-                ]
-            else:
-                labels = [
-                    'Def. Sg. Nom.:', 'Def. Sg. Acc.:', 'Def. Sg. Gen.:',
-                    'Def. Pl. Nom.:', 'Def. Pl. Acc.:', 'Def. Pl. Gen.:',
-                    'Ind. Sg. Nom.:', 'Ind. Sg. Acc.:', 'Ind. Sg. Gen.:'
-                ]
+            sg_cases = [c for c in active_cases if c[0] == 'sg']
+            labels = (
+                [_def_labels[tuple(c)] for c in active_cases] +
+                [_indef_labels[tuple(c)] for c in sg_cases]
+            )
 
         noun_form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(label="Check", show_clear_button=True)
         noun_form.test_word = word
         noun_form.is_pluralia_tantum = is_pluralia_tantum
+        noun_form.active_cases = active_cases
     return word, translation, noun_form
 
 def _ci_match(value, forms):
-    """Case-insensitive membership test with early exit. Returns True if value.lower() matches any form.lower()"""
+    """Case-insensitive, NFC-normalized membership test."""
     if not forms:
         return False
-    value_lower = value.lower()
-    return any(f.lower() == value_lower for f in forms)
+    value_norm = unicodedata.normalize('NFC', value).lower()
+    return any(unicodedata.normalize('NFC', f).lower() == value_norm for f in forms)
 
 def _noun_declension_test(user_input, declension, noun_base, noun_descr, article_descr, article_gender=None):
     """Internal validator for a single noun form."""
@@ -265,13 +297,15 @@ def check_noun_test(noun, noun_form, mode='simple'):
         descr = v_obj.all()
 
     is_pluralia_tantum = getattr(noun_form, 'is_pluralia_tantum', False)
-    all_cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-    pl_cases = [['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-    cases = pl_cases if is_pluralia_tantum else all_cases
+    active_cases = getattr(noun_form, 'active_cases', None)
+    if not isinstance(active_cases, list):
+        all_cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+        pl_cases  = [['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+        active_cases = pl_cases if is_pluralia_tantum else all_cases
 
     if mode == 'simple':
         checks = [_noun_declension_test(val, case, noun_word, descr, None)
-                  for val, case in zip(noun_form.value, cases)]
+                  for val, case in zip(noun_form.value, active_cases)]
         return all(checks)
     else:
         noun_type = list(descr.keys())[0] if descr else 'masc'
@@ -282,14 +316,11 @@ def check_noun_test(noun, noun_form, mode='simple'):
         article_gender = _article_to_gender.get(noun_article) if noun_article else None
         art_def = Article('ο')
         art_indef = Article('ένας')
-        if is_pluralia_tantum:
-            def_checks = [_noun_declension_test(val, case, noun_word, descr, art_def, article_gender)
-                          for val, case in zip(noun_form.value, pl_cases)]
-            return all(def_checks)
+        sg_cases = [c for c in active_cases if c[0] == 'sg']
         def_checks = [_noun_declension_test(val, case, noun_word, descr, art_def, article_gender)
-                      for val, case in zip(noun_form.value[:6], all_cases)]
+                      for val, case in zip(noun_form.value, active_cases)]
         indef_checks = [_noun_declension_test(val, case, noun_word, descr, art_indef, article_gender)
-                        for val, case in zip(noun_form.value[6:], all_cases[:3])]
+                        for val, case in zip(noun_form.value[len(active_cases):], sg_cases)]
         return all(def_checks) and all(indef_checks)
 
 def process_noun_test(noun, noun_form, words, words4test, set_words4test, set_last_passed_mesg, set_current_noun=None, mode='simple'):
