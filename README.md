@@ -27,8 +27,9 @@ These examples showcase the framework capabilities: built-in word samples, custo
 - **`greek_utils.py`**: Core utility module with morphological validation, UI components, and test harness logic
 
 ### Example Applications (built with the framework)
-- **`greek_nouns.py`**: Interactive notebook for practicing noun declensions (Simple and with Articles)
-- **`greek_verbs.py`**: Interactive notebook for practicing verb conjugations (supports Present, Imperfect, Aorist, Future, Continuous Future, Subjunctive)
+- **`examples/greek_nouns.py`**: Interactive notebook for practicing noun declensions (Simple and with Articles)
+- **`examples/greek_verbs.py`**: Interactive notebook for practicing verb conjugations (supports Present, Imperfect, Aorist, Future, Continuous Future, Subjunctive)
+- **`examples/greek_adjectives.py`**: Interactive notebook for practicing adjective declensions
 
 ## Prerequisites
 
@@ -40,7 +41,7 @@ These examples showcase the framework capabilities: built-in word samples, custo
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://codeberg.org/sadov/modern-greek-eee.git
+    git clone https://codeberg.org/EEE-project/modern-greek-eee.git
     cd modern-greek-eee
     ```
 
@@ -58,16 +59,23 @@ You can run the notebooks in "edit" mode (to see the code) or "app" mode (for a 
 
 ### For Nouns:
 ```bash
-marimo edit greek_nouns.py
+marimo edit examples/greek_nouns.py
 # OR
-marimo run greek_nouns.py
+marimo run examples/greek_nouns.py
 ```
 
 ### For Verbs:
 ```bash
-marimo edit greek_verbs.py
+marimo edit examples/greek_verbs.py
 # OR
-marimo run greek_verbs.py
+marimo run examples/greek_verbs.py
+```
+
+### For Adjectives:
+```bash
+marimo edit examples/greek_adjectives.py
+# OR
+marimo run examples/greek_adjectives.py
 ```
 
 ## How to Work with the Forms

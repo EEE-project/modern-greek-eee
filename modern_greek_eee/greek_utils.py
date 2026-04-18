@@ -6,6 +6,8 @@ import unicodedata
 import modern_greek_inflexion_eee as modern_greek_inflexion
 from modern_greek_inflexion_eee import Article, Noun, Verb, Adjective
 
+_ERR = '<span style="color: red; font-weight: bold;">Error!</span>'
+
 # --- Tense Labels ---
 # Tense terminology consolidation with context prefixes for field labels
 # Context prefixes (θα, να, αν) shown in UI labels as "εγώ θα", "εγώ να", "εγώ αν"
@@ -251,7 +253,7 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
             return True
         else:
             case_label = f"{declension[0]}.{declension[1]}"
-            print(f'<span style="color: red; font-weight: bold;">Error!</span> [{case_label}]: entered **"{noun_word}"**, must be **{correct_noun_forms}**\n\n')
+            print(f'{_ERR} [{case_label}]: entered **"{noun_word}"**, must be **{correct_noun_forms}**<br>')
             return False
 
     art_type = article_gender if article_gender is not None else noun_type
@@ -264,7 +266,7 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
         article_type = 'def' if article_descr.article in ['ο', 'η', 'το'] else 'indef'
         case_label = f"{article_type}.{declension[0]}.{declension[1]}"
         correct_full = f"{article_forms} {correct_noun_forms}"
-        print(f'<span style="color: red; font-weight: bold;">Error!</span> [{case_label}]: entered **"{user_input}"**, must be **{correct_full}**\n\n')
+        print(f'{_ERR} [{case_label}]: entered **"{user_input}"**, must be **{correct_full}**<br>')
         return False
 
 def check_noun_test(noun, noun_form, mode='simple'):
@@ -500,7 +502,7 @@ def check_verb_test(verb_base, form_array, tense):
                 if user_val.lower().startswith(prefix_lower):
                     check_val = user_val[len(display_prefix):].strip()
                 else:
-                    errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{pronoun}]: Write with **"{display_prefix.strip()}"**')
+                    errors.append(f'{_ERR} [{pronoun}]: Write with **"{display_prefix.strip()}"**')
                     success = False
                     continue
 
@@ -510,9 +512,9 @@ def check_verb_test(verb_base, form_array, tense):
                 available_tenses = list(v_desc.keys())
                 expected = "/".join(correct_forms) if correct_forms else f"unknown (path: {path_prefix}, keys: {available_tenses})"
                 if display_prefix: expected = f"{display_prefix} {expected}"
-                errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{pronoun}]: entered **"{user_val}"**, must be **{expected}**')
+                errors.append(f'{_ERR} [{pronoun}]: entered **"{user_val}"**, must be **{expected}**')
 
-    return success, "\n\n".join(errors)
+    return success, "<br>".join(errors)
 
 def process_verb_completion(current_verb_val, aorist_ok, future_ok, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_verb):
     """Updates state and returns message after verb test completion."""
@@ -686,12 +688,12 @@ def check_adjective_test(adj_base, form_array, mode='simple'):
         if not _ci_match(user_val, correct_forms):
             success = False
             correct_text = "/".join(correct_forms)
-            errors.append(f'<span style="color: red; font-weight: bold;">Error!</span> [{field_label}]: entered **"{user_val}"**, must be **{correct_text}**')
+            errors.append(f'{_ERR} [{field_label}]: entered **"{user_val}"**, must be **{correct_text}**')
 
     if not has_any_input:
-        return False, '<span style="color: red; font-weight: bold;">Error!</span> Please fill in at least one gender form'
+        return False, f'{_ERR} Please fill in at least one gender form'
 
-    return success, "\n\n".join(errors)
+    return success, "<br>".join(errors)
 
 def process_adjective_completion(current_adj_val, adj_ok, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_adj):
     """Updates state and returns message after adjective test completion."""
@@ -707,3 +709,23 @@ def process_adjective_completion(current_adj_val, adj_ok, words, words4test_val,
             set_current_adj(None)
         return passed_mesg
     return ""
+
+# --- Display Helpers ---
+
+def make_noun_display(header, translation_md, result, form, done_msg):
+    """Build vstack for noun/adj display cell. Returns done message when form is None."""
+    if form is not None:
+        return mo.vstack([mo.md(header), mo.md(translation_md), result, form])
+    return mo.md(done_msg)
+
+
+def make_verb_display(header, msg_fn, result, form, done_msg):
+    """Build vstack for verb/adj display cell. Returns done message when form is None."""
+    if form is not None:
+        items = [mo.md(header)]
+        _msg = msg_fn() if msg_fn else None
+        if _msg:
+            items.append(mo.md(_msg))
+        items += [result, form]
+        return mo.vstack(items)
+    return mo.md(done_msg)
