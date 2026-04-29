@@ -483,6 +483,10 @@ def check_verb_test(verb_base, form_array, tense):
     if not path_prefix:
         path_prefix = config.get('path')
 
+    # Defective verb: no forms exist at any person/number for this tense
+    if not any(word_kind(v_obj, path_prefix + [num, pers], v_desc) for num in numbers for pers in persons):
+        return False, f'{_ERR} [defective verb]: **{verb_base}** has no {tense} forms — remove from test list'
+
     display_prefix = config.get('prefix', '')
     prefix_lower = display_prefix.lower() if display_prefix else ''
     pronouns = ['εγώ', 'εσύ', 'αυτός,-ή,-ό', 'εμείς', 'εσείς', 'αυτοί,-ές,-ά']
