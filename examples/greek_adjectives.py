@@ -42,8 +42,8 @@ def _(language_selector, mo, t_ui):
 
 
 @app.cell(hide_code=True)
-def _(df, mo):
-    table = mo.ui.table(df, selection="multi") if df is not None else None
+def _(df, mo, tbl_sel):
+    table = mo.ui.table(df, selection="multi", initial_selection=tbl_sel()) if df is not None else None
     table
     return (table,)
 
@@ -75,18 +75,25 @@ def _(language_selector, mo, t_ui):
 
 
 @app.cell(hide_code=True)
-def _(adj_cv, adj_form, gu, language_selector, mo, t_ui, words, words4test):
+def _(adj_cv, adj_form, captured_adj, clear_button, gu, language_selector, mo, mode_selector, session_total, skip_button, submit_button, t_ui, words4test):
     # Adjective Test View
     _lang = language_selector.value
+    _mode = mode_selector.value
     _adj = adj_cv()
     if words4test() and _adj:
-        _, _msg = gu.check_adjective_test(_adj['Word'], adj_form)
+        _c = captured_adj()
+        _feedback = mo.md("")
+        if _c and getattr(_c, 'adj_word', None) == _adj['Word']:
+            _, _msg = gu.check_adjective_test(_adj['Word'], _c, mode=_mode)
+            if _msg:
+                _feedback = mo.md(_msg)
 
         _view = mo.vstack([
-            mo.md(f"**{t_ui('test_label', _lang)}** ({len(words4test())}/{len(words)})"),
+            mo.md(f"**{t_ui('test_label', _lang)}** ({len(words4test())}/{session_total()})"),
             mo.md(f"{t_ui('translation_label', _lang)} **{_adj['Translation']}**"),
             adj_form,
-            mo.md(_msg) if _msg else mo.md("")
+            _feedback,
+            mo.hstack([skip_button, clear_button, submit_button], justify="end"),
         ])
     else:
         _view = mo.md(f"**{t_ui('empty_list', _lang)}**")
@@ -171,8 +178,9 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(adj_cv, gu, mode_selector):
+def _(adj_cv, clear_count, gu, mode_selector):
     # Setup adjective test form with selected mode
+    clear_count()
     _acv = adj_cv()
     _mode = mode_selector.value
     adj_form, _ = gu.create_adjective_test_ui([] if not _acv else [_acv], [], _acv, mode=_mode)
@@ -180,23 +188,84 @@ def _(adj_cv, gu, mode_selector):
 
 
 @app.cell(hide_code=True)
+def _(adj_form, captured_adj, mo, set_submit_count):
+    # Submit button: yellow when fields have input that differs from last snapshot
+    _values = adj_form.value if adj_form else []
+    _snap = captured_adj()
+    _has_input = bool(_values and any(v.strip() for v in _values))
+    _matches_snap = _snap is not None and [v.strip() for v in _values] == [v.strip() for v in (_snap.value or [])]
+    _dirty = _has_input and not _matches_snap
+    _clk = lambda v: (v or 0) + 1
+    submit_button = mo.ui.button(label="Submit", on_click=_clk, kind="warn" if _dirty else "neutral")
+    set_submit_count(0)
+    return (submit_button,)
+
+
+@app.cell(hide_code=True)
 def _(
     adj_cv,
-    adj_form,
+    captured_adj,
+    df,
     gu,
-    mode_selector,
+    random,
+    session_total,
     set_adj_cv,
     set_adj_last_passed_mesg,
+    set_captured_adj,
+    set_tbl_sel,
     set_words4test,
-    words,
     words4test,
 ):
-    # Adjective test progression with mode
+    # Adjective test progression
     _adj = adj_cv()
-    _mode = mode_selector.value
-    if words4test() and _adj:
-        adj_ok, _ = gu.check_adjective_test(_adj['Word'], adj_form, mode=_mode)
-        gu.process_adjective_completion(_adj, adj_ok, words, words4test(), set_words4test, set_adj_last_passed_mesg, set_adj_cv)
+    _c = captured_adj()
+    if words4test() and _adj and _c and getattr(_c, 'adj_word', None) == _adj['Word']:
+        adj_ok, _ = gu.check_adjective_test(_adj['Word'], _c)
+        if adj_ok:
+            _new_list = [w for w in words4test() if w["Word"] != _adj["Word"]]
+            set_words4test(_new_list)
+            if df is not None:
+                _rem = {w["Word"] for w in _new_list}
+                set_tbl_sel([i for i, w in enumerate(df["Word"]) if w in _rem])
+            set_adj_last_passed_mesg(f'<span style="color: green;">Test for <b>"{_adj["Word"]} -- {_adj["Translation"]}"</b> passed.\n\n{len(_new_list)} words remaining out of {session_total()}.</span>')
+            set_adj_cv(random.choice(_new_list) if _new_list else None)
+            set_captured_adj(None)
+    return
+
+
+@app.cell(hide_code=True)
+def _(adj_cv, adj_form, gu, set_captured_adj, set_submit_count, submit_button, submit_count):
+    # Submit handler: freeze current field values for checking
+    if (submit_button.value or 0) > submit_count():
+        set_submit_count(submit_button.value)
+        _acv = adj_cv()
+        if _acv and adj_form:
+            set_captured_adj(gu.make_snapshot(adj_form))
+    return
+
+
+@app.cell(hide_code=True)
+def _(adj_cv, df, random, set_adj_cv, set_captured_adj, set_skip_count, set_tbl_sel, set_words4test, skip_button, skip_count, words4test):
+    # Skip handler: remove current adjective from words4test
+    if (skip_button.value or 0) > skip_count():
+        set_skip_count(skip_button.value)
+        set_captured_adj(None)
+        _acv = adj_cv()
+        _new_list = [w for w in words4test() if not _acv or w["Word"] != _acv["Word"]]
+        set_words4test(_new_list)
+        if df is not None:
+            _rem = {w["Word"] for w in _new_list}
+            set_tbl_sel([i for i, w in enumerate(df["Word"]) if w in _rem])
+        set_adj_cv(random.choice(_new_list) if _new_list else None)
+    return
+
+
+@app.cell(hide_code=True)
+def _(clear_button, clear_count, set_captured_adj, set_clear_count):
+    # Clear handler: reset fields and feedback
+    if (clear_button.value or 0) > clear_count():
+        set_clear_count(clear_button.value)
+        set_captured_adj(None)
     return
 
 
@@ -217,13 +286,24 @@ def _(file_upload, gu):
 
 
 @app.cell(hide_code=True)
-def _(gu, mo, random, table):
+def _(gu, mo, random, session_total, set_session_total, table):
     # Initialize state variables
     words = gu.get_words(table)
     words4test, set_words4test = mo.state(words.copy() if words else [])
+    if words and not session_total():
+        set_session_total(len(words))
+    elif not words:
+        set_session_total(0)
     adj_last_passed_mesg, set_adj_last_passed_mesg = mo.state("")
 
     adj_cv, set_adj_cv = mo.state(None)
+    captured_adj, set_captured_adj = mo.state(None)
+    _clk = lambda v: (v or 0) + 1
+    skip_button = mo.ui.button(label="Skip", on_click=_clk)
+    clear_button = mo.ui.button(label="Clear", on_click=_clk)
+    skip_count, set_skip_count = mo.state(0)
+    clear_count, set_clear_count = mo.state(0)
+    submit_count, set_submit_count = mo.state(0)
 
     # Sync current word state if words were selected/loaded
     if words:
@@ -232,12 +312,29 @@ def _(gu, mo, random, table):
     return (
         adj_cv,
         adj_last_passed_mesg,
+        captured_adj,
+        clear_button,
+        clear_count,
         set_adj_cv,
         set_adj_last_passed_mesg,
+        set_captured_adj,
+        set_clear_count,
+        set_skip_count,
+        set_submit_count,
         set_words4test,
+        skip_button,
+        skip_count,
+        submit_count,
         words,
         words4test,
     )
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    tbl_sel, set_tbl_sel = mo.state(None)
+    session_total, set_session_total = mo.state(0)
+    return session_total, set_session_total, set_tbl_sel, tbl_sel
 
 
 @app.cell(hide_code=True)

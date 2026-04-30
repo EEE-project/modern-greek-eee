@@ -15,9 +15,10 @@ This is not just a collection of exercises — it's a reusable framework for:
 
 ## Example Applications
 
-Two ready-to-use example notebooks demonstrating the framework:
+Three ready-to-use example notebooks demonstrating the framework:
 - **Noun Declension Tester**: https://molab.marimo.io/notebooks/nb_KZYjBCXm1jiSjMBnvxWezi/app
 - **Verb Conjugation Tester**: https://molab.marimo.io/notebooks/nb_HJPdFCQMSBvpw3EafKK88v/app
+- **Adjective Declension Tester**: https://molab.marimo.io/notebooks/nb_C7b5s58CeEseJvBWTbw8Px/app
 
 These examples showcase the framework capabilities: built-in word samples, custom CSV/TSV upload, automatic form generation, real-time validation.
 
@@ -81,7 +82,7 @@ marimo run examples/greek_adjectives.py
 ## How to Work with the Forms
 
 ### 1. Load Data
-By default, the notebooks come with a few sample words. You can also upload your own **TAB-delimited CSV** file using the "Load CSV" button. The file should have `Word` and `Translation` columns.
+By default, the notebooks come with a few sample words. You can also upload your own **TAB-delimited CSV** file using the "Load TSV" button. The file should have `Word` and `Translation` columns.
 
 ### 2. Select Words
 Check the boxes next to the words you want to practice in the table. The notebooks will randomly cycle through these selected words until all are completed.
@@ -92,10 +93,12 @@ Check the boxes next to the words you want to practice in the table. The noteboo
     - **Future forms** (Simple/Continuous) require the **`θα `** prefix (e.g., `θα γράψω`).
     - **Subjunctive forms** (Simple/Continuous) require the **`να `** prefix (e.g., `να γράψω`).
     - **Perfect forms** require the **`έχω `** prefix (e.g., `έχω γράψει`).
-- **Feedback**: After pressing the **"Check"** button, the system will provide immediate feedback. Errors are highlighted in red with the expected result shown.
+- **Feedback**: After pressing the **"Submit"** button, the system will provide immediate feedback. Errors are highlighted with the expected result shown.
+- **Skip**: Press **"Skip"** to skip the current word and move to the next one.
+- **Clear**: Press **"Clear"** to reset all fields and feedback for the current word.
 
 ### 4. Progression
-Once you correctly fill in all forms for a word, it is automatically removed from the "Words to Test" list. A progress counter (e.g., `3/6 words remaining`) keeps you updated.
+Once you correctly fill in all forms for a word, it is automatically removed from the practice list. A progress counter (e.g., `3/6`) keeps you updated, and completed words are deselected in the table.
 
 ## Creating Custom Applications
 
