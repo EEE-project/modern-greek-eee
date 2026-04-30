@@ -453,6 +453,28 @@ def test_unknown_tense():
     assert 'unknown' in msg.lower() or 'error' in msg.lower()
 
 
+# =============================================================================
+# Defective verbs (no forms for requested tense)
+# =============================================================================
+
+def test_defective_verb_aorist_eimi():
+    """είμαι has no aorist forms — should return clear defective error."""
+    form = make_form('είμαι', ['', '', '', '', '', ''])
+    ok, msg = check_verb_test('είμαι', form, 'aorist')
+    assert ok == False
+    assert 'defective verb' in msg, f"Expected 'defective verb' in message, got: {msg}"
+    assert 'είμαι' in msg
+
+
+def test_defective_verb_aorist_exo():
+    """έχω has no aorist forms — should return clear defective error."""
+    form = make_form('έχω', ['', '', '', '', '', ''])
+    ok, msg = check_verb_test('έχω', form, 'aorist')
+    assert ok == False
+    assert 'defective verb' in msg, f"Expected 'defective verb' in message, got: {msg}"
+    assert 'έχω' in msg
+
+
 if __name__ == '__main__':
     import sys
 
@@ -500,6 +522,10 @@ if __name__ == '__main__':
 
         # Stem changes
         test_type_a_future,
+
+        # Defective verbs
+        test_defective_verb_aorist_eimi,
+        test_defective_verb_aorist_exo,
 
         # General
         test_empty_form,

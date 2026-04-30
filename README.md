@@ -41,7 +41,7 @@ These examples showcase the framework capabilities: built-in word samples, custo
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://codeberg.org/EEE-project/modern-greek-eee.git
+    git clone https://github.com/EEE-project/modern-greek-eee.git
     cd modern-greek-eee
     ```
 
