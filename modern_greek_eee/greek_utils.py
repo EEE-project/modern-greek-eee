@@ -3,6 +3,7 @@ import pandas as pd
 import io
 import random
 import unicodedata
+from types import SimpleNamespace
 import modern_greek_inflexion_eee as modern_greek_inflexion
 from modern_greek_inflexion_eee import Article, Noun, Verb, Adjective
 
@@ -95,6 +96,22 @@ def get_word_by_type(word, wtype):
         word_type = getattr(modern_greek_inflexion, wtype)
         return word_type(word)
     return None
+
+def make_snapshot(fields, **kwargs):
+    """Freeze a UI fields array's current values into a plain object.
+
+    The returned SimpleNamespace has .value (list of strings) and copies any
+    metadata attributes set by create_*_test_ui (verb_word, test_word,
+    active_cases, adj_word, adj_mode, etc.). Extra keyword args are also set.
+    """
+    s = SimpleNamespace()
+    s.value = list(fields.value) if fields and fields.value else []
+    for attr in ('verb_word', 'test_word', 'is_pluralia_tantum', 'active_cases', 'adj_word', 'adj_mode'):
+        if hasattr(fields, attr):
+            setattr(s, attr, getattr(fields, attr))
+    for k, v in kwargs.items():
+        setattr(s, k, v)
+    return s
 
 def word_kind(word_obj, kind_path, word_desc=None):
     """Extracts specific grammatical forms from a morphological word object.
@@ -204,7 +221,7 @@ def create_noun_test_ui(words, mode='simple'):
                 [_indef_labels[tuple(c)] for c in sg_cases]
             )
 
-        noun_form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(label="Check", show_clear_button=True)
+        noun_form = mo.ui.array([mo.ui.text(label=l) for l in labels])
         noun_form.test_word = word
         noun_form.is_pluralia_tantum = is_pluralia_tantum
         noun_form.active_cases = active_cases
@@ -248,12 +265,15 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
             break
     word_is_correct = _ci_match(noun_word, correct_noun_forms)
 
+    _num = {'sg': 'Sg.', 'pl': 'Pl.'}.get(declension[0], declension[0])
+    _case = {'nom': 'Nom.', 'acc': 'Acc.', 'gen': 'Gen.'}.get(declension[1], declension[1])
+
     if article_descr is None:
         if word_is_correct:
             return True
         else:
-            case_label = f"{declension[0]}.{declension[1]}"
-            print(f'{_ERR} [{case_label}]: entered **"{noun_word}"**, must be **{correct_noun_forms}**<br>')
+            _correct = " / ".join(sorted(correct_noun_forms)) if correct_noun_forms else "?"
+            print(f'{_ERR} [{_num} {_case}]: entered **"{noun_word}"**, must be **{_correct}**<br>')
             return False
 
     art_type = article_gender if article_gender is not None else noun_type
@@ -264,9 +284,11 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
         return True
     else:
         article_type = 'def' if article_descr.article in ['ο', 'η', 'το'] else 'indef'
-        case_label = f"{article_type}.{declension[0]}.{declension[1]}"
-        correct_full = f"{article_forms} {correct_noun_forms}"
-        print(f'{_ERR} [{case_label}]: entered **"{user_input}"**, must be **{correct_full}**<br>')
+        _art_prefix = {'def': 'Def.', 'indef': 'Indef.'}.get(article_type, article_type)
+        _art_str = " / ".join(sorted(article_forms)) if article_forms else "?"
+        _noun_str = " / ".join(sorted(correct_noun_forms)) if correct_noun_forms else "?"
+        _correct = f"{_art_str} {_noun_str}"
+        print(f'{_ERR} [{_art_prefix} {_num} {_case}]: entered **"{user_input}"**, must be **{_correct}**<br>')
         return False
 
 def check_noun_test(noun, noun_form, mode='simple'):
@@ -421,7 +443,7 @@ def create_verb_test_ui(title, words, words4test_val, current_verb):
             mo.ui.text(label="εμείς:"),
             mo.ui.text(label="εσείς:"),
             mo.ui.text(label="αυτοί,-ές,-ά:"),
-        ]).form(show_clear_button=True)
+        ])
         form.verb_word = word
 
         if len(words4test_val):
@@ -449,7 +471,7 @@ def _patch_voice(path, v_desc):
 
 def check_verb_test(verb_base, form_array, tense):
     """Validates verb forms using modular tense configuration."""
-    if form_array is None or form_array.value is None:
+    if form_array is None or not form_array.value:
         return False, ""
     if hasattr(form_array, 'verb_word') and form_array.verb_word != verb_base:
         return False, ""
@@ -554,7 +576,7 @@ def create_adjective_test_ui(words, words4test_val, current_adj, mode='simple'):
         _, field_labels = _adj_field_schema(mode)
         labels = [f"{label}:" for label in field_labels]
 
-        form = mo.ui.array([mo.ui.text(label=l) for l in labels]).form(show_clear_button=True)
+        form = mo.ui.array([mo.ui.text(label=l) for l in labels])
         form.adj_word = word
         form.adj_mode = mode
 
@@ -656,7 +678,7 @@ def check_adjective_test(adj_base, form_array, mode='simple'):
     Complex mode: validates 18 forms (3 genders × 2 numbers × 3 cases: nom, acc, gen)
 
     Allow partial input - only validate non-empty fields."""
-    if form_array is None or form_array.value is None:
+    if form_array is None or not form_array.value:
         return False, ""
     if hasattr(form_array, 'adj_word') and form_array.adj_word != adj_base:
         return False, ""

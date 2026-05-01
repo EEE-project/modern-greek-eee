@@ -40,8 +40,8 @@ def _(language_selector, mo, t_ui):
 
 
 @app.cell(hide_code=True)
-def _(df, mo):
-    table = mo.ui.table(df, selection="multi") if df is not None else None
+def _(df, mo, tbl_sel):
+    table = mo.ui.table(df, selection="multi", initial_selection=tbl_sel()) if df is not None else None
     table
     return (table,)
 
@@ -65,29 +65,37 @@ def _(language_selector, mo, t_ui):
 
 @app.cell(hide_code=True)
 def _(
+    captured_simple,
+    clear_button,
     gu,
     language_selector,
     mo,
     noun,
     noun_form,
     noun_trans,
+    session_total,
+    skip_button,
+    submit_button,
     t_ui,
-    words,
     words4test,
 ):
     # View Simple Test
     _lang = language_selector.value
-    _feedback = ""
+    _feedback = mo.md("")
     if words4test() and noun:
-        with mo.capture_stdout() as _buffer:
-            gu.check_noun_test(noun, noun_form, mode='simple')
-            _feedback = _buffer.getvalue()
+        _cs = captured_simple()
+        if _cs and getattr(_cs, 'test_word', None) == noun:
+            with mo.capture_stdout() as _buf:
+                gu.check_noun_test(noun, _cs, mode='simple')
+            if _buf.getvalue():
+                _feedback = mo.md(_buf.getvalue())
 
         _view = mo.vstack([
-            mo.md(f"**{t_ui('simple_test', _lang)}** ({len(words4test())}/{len(words)})"),
+            mo.md(f"**{t_ui('simple_test', _lang)}** ({len(words4test())}/{session_total()})"),
             mo.md(f"{t_ui('translation_label', _lang)} **{noun_trans}**"),
             noun_form,
-            mo.md(_feedback)
+            _feedback,
+            mo.hstack([skip_button, clear_button, submit_button], justify="end"),
         ])
     else:
         _view = mo.md(f"**{t_ui('empty_list', _lang)}**")
@@ -101,26 +109,34 @@ def _(
     art_noun,
     art_noun_form,
     art_noun_trans,
+    captured_article,
+    clear_button,
     gu,
     language_selector,
     mo,
+    session_total,
+    skip_button,
+    submit_button,
     t_ui,
-    words,
     words4test,
 ):
     # View Article Test
     _lang = language_selector.value
-    _feedback = ""
+    _feedback = mo.md("")
     if words4test() and art_noun:
-        with mo.capture_stdout() as _buffer:
-            gu.check_noun_test(art_noun, art_noun_form, mode='article')
-            _feedback = _buffer.getvalue()
+        _ca = captured_article()
+        if _ca and getattr(_ca, 'test_word', None) == art_noun:
+            with mo.capture_stdout() as _buf:
+                gu.check_noun_test(art_noun, _ca, mode='article')
+            if _buf.getvalue():
+                _feedback = mo.md(_buf.getvalue())
 
         _view_art = mo.vstack([
-            mo.md(f"**{t_ui('article_test', _lang)}** ({len(words4test())}/{len(words)})"),
+            mo.md(f"**{t_ui('article_test', _lang)}** ({len(words4test())}/{session_total()})"),
             mo.md(f"{t_ui('translation_label', _lang)} **{art_noun_trans}**"),
             art_noun_form,
-            mo.md(_feedback)
+            _feedback,
+            mo.hstack([skip_button, clear_button, submit_button], justify="end"),
         ])
     else:
         _view_art = mo.md(f"**{t_ui('empty_list', _lang)}**")
@@ -199,52 +215,117 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(current_noun, gu):
+def _(clear_count, current_noun, gu):
     # Setup simple test form (reactive to shared current word state)
+    clear_count()
     _cn = current_noun()
     noun, noun_trans, noun_form = gu.create_noun_test_ui([_cn] if _cn else [], mode='simple')
     return noun, noun_form, noun_trans
 
 
 @app.cell(hide_code=True)
-def _(current_noun, gu):
+def _(clear_count, current_noun, gu):
     # Setup article test form (reactive to shared current word state)
+    clear_count()
     _acn = current_noun()
     art_noun, art_noun_trans, art_noun_form = gu.create_noun_test_ui([_acn] if _acn else [], mode='article')
     return art_noun, art_noun_form, art_noun_trans
 
 
 @app.cell(hide_code=True)
-def _(
-    gu,
-    noun,
-    noun_form,
-    set_current_noun,
-    set_last_passed_mesg,
-    set_words4test,
-    words,
-    words4test,
-):
-    # Logic Simple progression
-    if words4test() and noun:
-        gu.process_noun_test(noun, noun_form, words, words4test, set_words4test, set_last_passed_mesg, set_current_noun, mode='simple')
-    return
+def _(art_noun_form, captured_article, captured_simple, mo, noun_form, set_submit_count):
+    # Submit button: yellow when either form has input that differs from its snapshot
+    _vals_s = noun_form.value if noun_form else []
+    _vals_a = art_noun_form.value if art_noun_form else []
+    _snap_s = captured_simple()
+    _snap_a = captured_article()
+    _has_s = bool(_vals_s and any(v.strip() for v in _vals_s))
+    _has_a = bool(_vals_a and any(v.strip() for v in _vals_a))
+    _match_s = _snap_s is not None and [v.strip() for v in _vals_s] == [v.strip() for v in (_snap_s.value or [])]
+    _match_a = _snap_a is not None and [v.strip() for v in _vals_a] == [v.strip() for v in (_snap_a.value or [])]
+    _dirty = (_has_s and not _match_s) or (_has_a and not _match_a)
+    _clk = lambda v: (v or 0) + 1
+    submit_button = mo.ui.button(label="Submit", on_click=_clk, kind="warn" if _dirty else "neutral")
+    set_submit_count(0)
+    return (submit_button,)
 
 
 @app.cell(hide_code=True)
 def _(
-    art_noun,
-    art_noun_form,
+    captured_article,
+    captured_simple,
+    current_noun,
+    df,
     gu,
+    random,
+    session_total,
+    set_captured_article,
+    set_captured_simple,
     set_current_noun,
     set_last_passed_mesg,
+    set_tbl_sel,
     set_words4test,
-    words,
     words4test,
 ):
-    # Logic Article progression (syncs current_noun)
-    if words4test() and art_noun:
-        gu.process_noun_test(art_noun, art_noun_form, words, words4test, set_words4test, set_last_passed_mesg, set_current_noun, mode='article')
+    # Progression: check either snapshot; word passes if either mode is complete
+    _cn = current_noun()
+    _cs = captured_simple()
+    _ca = captured_article()
+    if words4test() and _cn and (_cs or _ca):
+        _passed = False
+        if _cs and getattr(_cs, 'test_word', None) == _cn['Word']:
+            _passed = gu.check_noun_test(_cn['Word'], _cs, mode='simple')
+        if not _passed and _ca and getattr(_ca, 'test_word', None) == _cn['Word']:
+            _passed = gu.check_noun_test(_cn['Word'], _ca, mode='article')
+        if _passed:
+            _new_list = [w for w in words4test() if w["Word"] != _cn["Word"]]
+            set_words4test(_new_list)
+            if df is not None:
+                _rem = {w["Word"] for w in _new_list}
+                set_tbl_sel([i for i, w in enumerate(df["Word"]) if w in _rem])
+            set_last_passed_mesg(f'<span style="color: green;">Test for <b>"{_cn["Word"]}"</b> passed.\n\n{len(_new_list)} words remaining out of {session_total()}.</span>')
+            set_captured_simple(None)
+            set_captured_article(None)
+            set_current_noun(random.choice(_new_list) if _new_list else None)
+    return
+
+
+@app.cell(hide_code=True)
+def _(art_noun, art_noun_form, gu, noun, noun_form, set_captured_article, set_captured_simple, set_submit_count, submit_button, submit_count):
+    # Submit handler: freeze both forms for checking
+    if (submit_button.value or 0) > submit_count():
+        set_submit_count(submit_button.value)
+        if noun and noun_form:
+            set_captured_simple(gu.make_snapshot(noun_form))
+        if art_noun and art_noun_form:
+            set_captured_article(gu.make_snapshot(art_noun_form))
+    return
+
+
+@app.cell(hide_code=True)
+def _(clear_button, clear_count, set_captured_article, set_captured_simple, set_clear_count):
+    # Clear handler: reset fields and feedback
+    if (clear_button.value or 0) > clear_count():
+        set_clear_count(clear_button.value)
+        set_captured_simple(None)
+        set_captured_article(None)
+    return
+
+
+@app.cell(hide_code=True)
+def _(current_noun, df, random, set_captured_article, set_captured_simple, set_current_noun, set_skip_count, set_tbl_sel, set_words4test, skip_button, skip_count, words4test):
+    # Skip handler: remove current word from words4test
+    if (skip_button.value or 0) > skip_count():
+        set_skip_count(skip_button.value)
+        set_captured_simple(None)
+        set_captured_article(None)
+        _cn = current_noun()
+        _new_list = [w for w in words4test() if not _cn or w["Word"] != _cn["Word"]]
+        set_words4test(_new_list)
+        if df is not None:
+            _rem = {w["Word"] for w in _new_list}
+            set_tbl_sel([i for i, w in enumerate(df["Word"]) if w in _rem])
+        set_current_noun(random.choice(_new_list) if _new_list else None)
     return
 
 
@@ -262,27 +343,58 @@ def _(file_upload, gu):
 
 
 @app.cell(hide_code=True)
-def _(gu, mo, random, table):
+def _(gu, mo, random, session_total, set_session_total, table):
     # Initialize state variables
     words = gu.get_words(table)
     words4test, set_words4test = mo.state(words.copy() if words else [])
+    if words and not session_total():
+        set_session_total(len(words))
+    elif not words:
+        set_session_total(0)
     last_passed_mesg, set_last_passed_mesg = mo.state("")
 
     current_noun, set_current_noun = mo.state(None)
+    captured_simple, set_captured_simple = mo.state(None)
+    captured_article, set_captured_article = mo.state(None)
+    _clk = lambda v: (v or 0) + 1
+    skip_button = mo.ui.button(label="Skip", on_click=_clk)
+    clear_button = mo.ui.button(label="Clear", on_click=_clk)
+    skip_count, set_skip_count = mo.state(0)
+    clear_count, set_clear_count = mo.state(0)
+    submit_count, set_submit_count = mo.state(0)
 
     # Sync current word state if words were selected/loaded
     if words:
         if current_noun() is None:
             set_current_noun(random.choice(words))
     return (
+        captured_article,
+        captured_simple,
+        clear_button,
+        clear_count,
         current_noun,
         last_passed_mesg,
+        set_captured_article,
+        set_captured_simple,
+        set_clear_count,
         set_current_noun,
         set_last_passed_mesg,
+        set_skip_count,
+        set_submit_count,
         set_words4test,
+        skip_button,
+        skip_count,
+        submit_count,
         words,
         words4test,
     )
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    tbl_sel, set_tbl_sel = mo.state(None)
+    session_total, set_session_total = mo.state(0)
+    return session_total, set_session_total, set_tbl_sel, tbl_sel
 
 
 @app.cell(hide_code=True)
