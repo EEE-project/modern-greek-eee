@@ -4,7 +4,7 @@ Interactive Greek language learning tools for Modern Greek B (Ελληνικά �
 Includes noun declension and verb conjugation exercises.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 # Import submodules for easy access
 from . import greek_utils
