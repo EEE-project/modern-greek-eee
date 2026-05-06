@@ -153,9 +153,11 @@ def _is_pluralia_tantum(noun_word):
     """Return True if the noun has no singular forms in the inflection database."""
     n_obj = get_word_by_type(noun_word, 'Noun')
     n_desc = n_obj.all() if n_obj else {}
-    noun_type = list(n_desc.keys())[0] if n_desc else None
-    sg_nom = word_kind(n_obj, [noun_type, 'sg', 'nom']) if noun_type else None
-    return not sg_nom or sg_nom == {''}
+    for noun_type in n_desc:
+        sg_nom = word_kind(n_obj, [noun_type, 'sg', 'nom'])
+        if sg_nom and sg_nom != {''}:
+            return False
+    return True
 
 
 def _active_noun_cases(noun_word, is_pluralia_tantum):

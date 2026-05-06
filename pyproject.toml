@@ -1,6 +1,6 @@
 [project]
 name = "modern-greek-eee"
-version = "0.4.1"
+version = "0.4.2"
 description = "Greek learning tools for Marimo"
 dependencies = [
     "jedi<0.20.0",
