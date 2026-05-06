@@ -344,6 +344,57 @@ def test_garsoniera_without_gen_pl():
     assert ok == True, "Should pass without gen.pl field"
 
 
+# =============================================================================
+# Multi-gender nouns: _is_pluralia_tantum must check all gender keys
+# χρόνος has two entries: neut (pl-only: χρόνια) + masc (sg+pl: ο χρόνος)
+# Bug: only the first key ('neut') was checked → wrongly treated as pluralia tantum
+# =============================================================================
+
+def test_chronos_is_not_pluralia_tantum():
+    """χρόνος must not be treated as pluralia tantum (has masc sg forms)."""
+    from modern_greek_eee.greek_utils import _is_pluralia_tantum
+    assert _is_pluralia_tantum('χρόνος') == False, \
+        "χρόνος has masc sg forms and must not be pluralia tantum"
+
+
+def test_chronos_active_cases_includes_singular():
+    """χρόνος must expose all 6 cases (sg+pl), not just plural."""
+    from modern_greek_eee.greek_utils import _active_noun_cases
+    cases = _active_noun_cases('χρόνος', False)
+    assert ['sg', 'nom'] in cases, "sg.nom must be present"
+    assert ['sg', 'acc'] in cases, "sg.acc must be present"
+    assert ['sg', 'gen'] in cases, "sg.gen must be present"
+    assert len(cases) == 6, f"Expected 6 cases, got {len(cases)}: {cases}"
+
+
+def test_chronos_simple_all_correct():
+    """χρόνος simple mode: all 6 masc forms accepted."""
+    form = make_form('χρόνος', [
+        'χρόνος',   # sg.nom
+        'χρόνο',    # sg.acc
+        'χρόνου',   # sg.gen
+        'χρόνοι',   # pl.nom
+        'χρόνους',  # pl.acc
+        'χρόνων',   # pl.gen
+    ], is_pluralia_tantum=False)
+    ok = check_noun_test('χρόνος', form, mode='simple')
+    assert ok == True, "χρόνος masc sg+pl forms should pass"
+
+
+def test_chronos_simple_wrong_singular():
+    """χρόνος: wrong sg.nom should fail (not silently skipped as pluralia tantum)."""
+    form = make_form('χρόνος', [
+        'wrong',    # sg.nom - WRONG
+        'χρόνο',
+        'χρόνου',
+        'χρόνοι',
+        'χρόνους',
+        'χρόνων',
+    ], is_pluralia_tantum=False)
+    ok = check_noun_test('χρόνος', form, mode='simple')
+    assert ok == False, "Wrong sg.nom must fail"
+
+
 if __name__ == '__main__':
     import sys
 
@@ -378,6 +429,12 @@ if __name__ == '__main__':
         test_noun_without_gen_pl_simple_correct,
         test_noun_without_gen_pl_simple_wrong,
         test_garsoniera_without_gen_pl,
+
+        # Multi-gender nouns (χρόνος fix)
+        test_chronos_is_not_pluralia_tantum,
+        test_chronos_active_cases_includes_singular,
+        test_chronos_simple_all_correct,
+        test_chronos_simple_wrong_singular,
     ]
 
     passed = 0
