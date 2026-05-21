@@ -71,6 +71,15 @@ wheels = [
 ]
 
 [[package]]
+name = "iniconfig"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
+]
+
+[[package]]
 name = "itsdangerous"
 version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -181,41 +190,43 @@ wheels = [
 ]
 
 [[package]]
-name = "modern-greek-accentuation"
-version = "1.0.7"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5d/cf/767f4aea571908328094a36775f30e6270e8f879a5c2fa06d4049c3d67cb/modern-greek-accentuation-1.0.7.tar.gz", hash = "sha256:3cdf8b7e6e2ce93295d528e79f60dcfa90fbd02828762d9c08b380bafeaecde0", size = 18298, upload-time = "2024-02-08T21:56:19.468Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/c4/862bc81b70006bcb38d250899470802e3ec78c4238a067f72a0a7060a852/modern_greek_accentuation-1.0.7-py3-none-any.whl", hash = "sha256:f2b0eb88291ba3f161d7b4f12b19746d8b9c663bbde79dc2774e366390be3cb2", size = 18601, upload-time = "2024-02-08T21:56:17.568Z" },
-]
+name = "modern-greek-accentuation-eee"
+version = "1.0.8"
+source = { git = "https://codeberg.org/EEE-project/modern_greek_accentuation_eee.git#8a2406fd3f2adc30a01226bb6975b6923b8549a9" }
 
 [[package]]
 name = "modern-greek-eee"
-version = "0.2.0"
+version = "0.4.2"
 source = { editable = "." }
 dependencies = [
+    { name = "jedi" },
     { name = "marimo" },
-    { name = "modern-greek-inflexion" },
+    { name = "modern-greek-inflexion-eee" },
     { name = "pandas" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "jedi", specifier = "<0.20.0" },
     { name = "marimo", specifier = ">=0.19.4" },
-    { name = "modern-greek-inflexion", specifier = "==2.0.7" },
+    { name = "modern-greek-inflexion-eee", git = "https://codeberg.org/EEE-project/modern-greek-inflexion-eee.git" },
     { name = "pandas", specifier = ">=2.0.0" },
 ]
 
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.3" }]
+
 [[package]]
-name = "modern-greek-inflexion"
-version = "2.0.7"
-source = { registry = "https://pypi.org/simple" }
+name = "modern-greek-inflexion-eee"
+version = "2.0.11"
+source = { git = "https://codeberg.org/EEE-project/modern-greek-inflexion-eee.git#1b20e83f4bc90cd48c10a6628ac4a008c6392776" }
 dependencies = [
-    { name = "modern-greek-accentuation" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/79/80/4dd9bfbd90de535859dfccdd3065b0b91a68ec1c89aaaaf1db8a5bd45edf/modern_greek_inflexion-2.0.7.tar.gz", hash = "sha256:5525caeff6941e42653568814811d5c152722565f0c18c9747a5aca32c9b8756", size = 9432418, upload-time = "2024-06-26T11:40:42.069Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/b1/727a2011e7e8030d0cf525e716fcda00a211982d11141603a28c14822bdc/modern_greek_inflexion-2.0.7-py3-none-any.whl", hash = "sha256:26d14666aacc61ab0e878f9d970ac8c08adff39c78fdf3b255110f429215a121", size = 9741610, upload-time = "2024-06-26T11:40:38.534Z" },
+    { name = "modern-greek-accentuation-eee" },
 ]
 
 [[package]]
@@ -372,6 +383,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pluggy"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
+]
+
+[[package]]
 name = "psutil"
 version = "7.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -419,6 +439,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ba/63/06673d1eb6d8f83c0ea1f677d770e12565fb516928b4109c9e2055656a9e/pymdown_extensions-10.21.tar.gz", hash = "sha256:39f4a020f40773f6b2ff31d2cd2546c2c04d0a6498c31d9c688d2be07e1767d5", size = 853363, upload-time = "2026-02-15T20:44:06.748Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6f/2c/5b079febdc65e1c3fb2729bf958d18b45be7113828528e8a0b5850dd819a/pymdown_extensions-10.21-py3-none-any.whl", hash = "sha256:91b879f9f864d49794c2d9534372b10150e6141096c3908a455e45ca72ad9d3f", size = 268877, upload-time = "2026-02-15T20:44:05.464Z" },
+]
+
+[[package]]
+name = "pytest"
+version = "9.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "iniconfig" },
+    { name = "packaging" },
+    { name = "pluggy" },
+    { name = "pygments" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
 ]
 
 [[package]]

@@ -747,6 +747,59 @@ def make_noun_display(header, translation_md, result, form, done_msg):
     return mo.md(done_msg)
 
 
+# --- Slot Configuration ---
+
+PRES_ACT_SLOTS = [
+    {"tense": "Pres", "voice": "Act", "person": "1", "number": "Sing"},
+    {"tense": "Pres", "voice": "Act", "person": "2", "number": "Sing"},
+    {"tense": "Pres", "voice": "Act", "person": "3", "number": "Sing"},
+    {"tense": "Pres", "voice": "Act", "person": "1", "number": "Plur"},
+    {"tense": "Pres", "voice": "Act", "person": "2", "number": "Plur"},
+    {"tense": "Pres", "voice": "Act", "person": "3", "number": "Plur"},
+]
+
+
+def has_multiple_voices(slots: list) -> bool:
+    """Return True if slots contain more than one distinct voice value."""
+    return len({s["voice"] for s in slots}) > 1
+
+
+_AG_TO_MG_TENSE = {
+    "Pres": "present",
+    "Imp": "imperfect",
+    "Aor": "aorist",
+    "Fut": "future",
+    "FutCont": "future_continuous",
+}
+
+
+def check_verb_forms(lemma: str, submissions: list, language: str) -> list:
+    """Route verb form checking to the correct backend.
+
+    submissions: list of SlotSubmission dicts {tense, voice, person, number, form}
+    Returns: list of SlotResult dicts {ok, msg, slot}
+    """
+    if language == "el":
+        mg_tense = _AG_TO_MG_TENSE.get(submissions[0]["tense"], submissions[0]["tense"])
+        fa = SimpleNamespace(
+            value=[s["form"] for s in submissions],
+            verb_word=lemma,
+        )
+        ok, msg = check_verb_test(lemma, fa, mg_tense)
+        return [{"ok": ok, "msg": msg if not ok else "", "slot": s} for s in submissions]
+    elif language == "grc":
+        import ancient_greek_eee
+        results = []
+        for s in submissions:
+            slot_ok, slot_msg = ancient_greek_eee.check_verb(
+                lemma, s["form"], s["tense"], s["voice"], s["person"], s["number"]
+            )
+            results.append({"ok": slot_ok, "msg": slot_msg, "slot": s})
+        return results
+    else:
+        raise ValueError(f"Unknown language: {language!r}")
+
+
 def make_verb_display(header, msg_fn, result, form, done_msg):
     """Build vstack for verb/adj display cell. Returns done message when form is None."""
     if form is not None:
