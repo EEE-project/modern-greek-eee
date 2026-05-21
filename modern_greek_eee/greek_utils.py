@@ -149,6 +149,10 @@ def load_data(file_upload, default_data):
 
 # --- Noun Logic ---
 
+_ALL_NOUN_CASES = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+_PL_NOUN_CASES  = [['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
+
+
 def _is_pluralia_tantum(noun_word):
     """Return True if the noun has no singular forms in the inflection database."""
     n_obj = get_word_by_type(noun_word, 'Noun')
@@ -162,9 +166,7 @@ def _is_pluralia_tantum(noun_word):
 
 def _active_noun_cases(noun_word, is_pluralia_tantum):
     """Return the subset of cases that have non-empty forms for this noun."""
-    all_cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-    pl_cases  = [['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-    candidates = pl_cases if is_pluralia_tantum else all_cases
+    candidates = _PL_NOUN_CASES if is_pluralia_tantum else _ALL_NOUN_CASES
     v_obj = get_word_by_type(noun_word, 'Noun')
     if not v_obj:
         return candidates
@@ -325,9 +327,7 @@ def check_noun_test(noun, noun_form, mode='simple'):
     is_pluralia_tantum = getattr(noun_form, 'is_pluralia_tantum', False)
     active_cases = getattr(noun_form, 'active_cases', None)
     if not isinstance(active_cases, list):
-        all_cases = [['sg', 'nom'], ['sg', 'acc'], ['sg', 'gen'], ['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-        pl_cases  = [['pl', 'nom'], ['pl', 'acc'], ['pl', 'gen']]
-        active_cases = pl_cases if is_pluralia_tantum else all_cases
+        active_cases = _PL_NOUN_CASES if is_pluralia_tantum else _ALL_NOUN_CASES
 
     if mode == 'simple':
         checks = [_noun_declension_test(val, case, noun_word, descr, None)
@@ -544,22 +544,26 @@ def check_verb_test(verb_base, form_array, tense):
 
     return success, "<br>".join(errors)
 
-def process_verb_completion(current_verb_val, aorist_ok, future_ok, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_verb):
-    """Updates state and returns message after verb test completion."""
-    if aorist_ok and future_ok and current_verb_val:
-        new_words4test = [w for w in words4test_val if w["Word"] != current_verb_val["Word"]]
+def _advance_word_list(ok, current_val, words, words4test_val, set_words4test, set_last_passed_mesg, set_current):
+    if ok and current_val:
+        new_words4test = [w for w in words4test_val if w["Word"] != current_val["Word"]]
         set_words4test(new_words4test)
         remaining, total = len(new_words4test), len(words)
-        passed_mesg = f'<span style="color: green;">Test for <b>"{current_verb_val["Word"]} -- {current_verb_val["Translation"]}"</b> passed.\n\n{remaining} words remaining out of {total}.</span>'
+        passed_mesg = f'<span style="color: green;">Test for <b>"{current_val["Word"]} -- {current_val["Translation"]}"</b> passed.\n\n{remaining} words remaining out of {total}.</span>'
         set_last_passed_mesg(passed_mesg)
-        if new_words4test:
-            set_current_verb(random.choice(new_words4test))
-        else:
-            set_current_verb(None)
+        set_current(random.choice(new_words4test) if new_words4test else None)
         return passed_mesg
     return ""
 
+
+def process_verb_completion(current_verb_val, aorist_ok, future_ok, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_verb):
+    """Updates state and returns message after verb test completion."""
+    return _advance_word_list(aorist_ok and future_ok, current_verb_val, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_verb)
+
 # --- Adjective Logic ---
+
+_ADJ_GENDER_CONFIG = [('masculine', 'masc', 'Masc'), ('feminine', 'fem', 'Fem'), ('neuter', 'neut', 'Neut')]
+
 
 def create_adjective_test_ui(words, words4test_val, current_adj, mode='simple'):
     """Generates adjective form UI.
@@ -596,31 +600,24 @@ def _adj_field_schema(mode):
     Simple mode: 6 fields (all singulars first: Masc/Fem/Neut Sg, then all plurals: Masc/Fem/Neut Pl)
     Complex mode: 18 fields (all singulars for all genders × cases, then all plurals for all genders × cases)
     """
-    gender_config = [('masculine', 'masc', 'Masc'), ('feminine', 'fem', 'Fem'), ('neuter', 'neut', 'Neut')]
     cases = [('nom', 'Nom'), ('acc', 'Acc'), ('gen', 'Gen')]
 
     field_keys = []
     field_labels = []
 
     if mode == 'simple':
-        # Simple: all singulars first (3 genders), then all plurals (3 genders), nominative only
-        # Singulars: Masc Sg, Fem Sg, Neut Sg
-        for gender_label, _gender_key, gender_short in gender_config:
+        for gender_label, _gender_key, gender_short in _ADJ_GENDER_CONFIG:
             field_keys.append(f'{gender_label}_sg_nom')
             field_labels.append(f'{gender_short} Sg')
-        # Plurals: Masc Pl, Fem Pl, Neut Pl
-        for gender_label, _gender_key, gender_short in gender_config:
+        for gender_label, _gender_key, gender_short in _ADJ_GENDER_CONFIG:
             field_keys.append(f'{gender_label}_pl_nom')
             field_labels.append(f'{gender_short} Pl')
     else:
-        # Complex: all singulars first (all genders × 3 cases), then all plurals
-        # Singulars: Masc Sg (Nom, Acc, Gen), Fem Sg (Nom, Acc, Gen), Neut Sg (Nom, Acc, Gen)
-        for gender_label, _gender_key, gender_short in gender_config:
+        for gender_label, _gender_key, gender_short in _ADJ_GENDER_CONFIG:
             for case_key, case_short in cases:
                 field_keys.append(f'{gender_label}_sg_{case_key}')
                 field_labels.append(f'{gender_short} Sg {case_short}')
-        # Plurals: Masc Pl (Nom, Acc, Gen), Fem Pl (Nom, Acc, Gen), Neut Pl (Nom, Acc, Gen)
-        for gender_label, _gender_key, gender_short in gender_config:
+        for gender_label, _gender_key, gender_short in _ADJ_GENDER_CONFIG:
             for case_key, case_short in cases:
                 field_keys.append(f'{gender_label}_pl_{case_key}')
                 field_labels.append(f'{gender_short} Pl {case_short}')
@@ -639,8 +636,6 @@ def _adj_expected_forms(adj_base, mode, adj_desc=None):
     Returns dict mapping field_key -> list of acceptable forms.
     """
     cases = ['nom'] if mode == 'simple' else ['nom', 'acc', 'gen']
-    gender_config = [('masculine', 'masc'), ('feminine', 'fem'), ('neuter', 'neut')]
-
     expected = {}
 
     if adj_desc is None:
@@ -653,7 +648,7 @@ def _adj_expected_forms(adj_base, mode, adj_desc=None):
 
     if adj_desc:
         try:
-            for gender_label, gender_key in gender_config:
+            for gender_label, gender_key, _ in _ADJ_GENDER_CONFIG:
                 for num_key in ['sg', 'pl']:
                     for case_key in cases:
                         forms = adj_desc.get('adj', {}).get(num_key, {}).get(gender_key, {}).get(case_key, set())
@@ -662,8 +657,7 @@ def _adj_expected_forms(adj_base, mode, adj_desc=None):
         except Exception:
             pass
 
-    # Fill missing keys with fallback
-    for gender_label, _gender_key in gender_config:
+    for gender_label, _gender_key, _ in _ADJ_GENDER_CONFIG:
         for num_key in ['sg', 'pl']:
             for case_key in cases:
                 key = f'{gender_label}_{num_key}_{case_key}'
@@ -725,18 +719,7 @@ def check_adjective_test(adj_base, form_array, mode='simple'):
 
 def process_adjective_completion(current_adj_val, adj_ok, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_adj):
     """Updates state and returns message after adjective test completion."""
-    if adj_ok and current_adj_val:
-        new_words4test = [w for w in words4test_val if w["Word"] != current_adj_val["Word"]]
-        set_words4test(new_words4test)
-        remaining, total = len(new_words4test), len(words)
-        passed_mesg = f'<span style="color: green;">Test for <b>"{current_adj_val["Word"]} -- {current_adj_val["Translation"]}"</b> passed.\n\n{remaining} words remaining out of {total}.</span>'
-        set_last_passed_mesg(passed_mesg)
-        if new_words4test:
-            set_current_adj(random.choice(new_words4test))
-        else:
-            set_current_adj(None)
-        return passed_mesg
-    return ""
+    return _advance_word_list(adj_ok, current_adj_val, words, words4test_val, set_words4test, set_last_passed_mesg, set_current_adj)
 
 # --- Display Helpers ---
 
