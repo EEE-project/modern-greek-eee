@@ -258,15 +258,18 @@ def _noun_declension_test(user_input, declension, noun_base, noun_descr, article
         gender_keys = [article_gender] + [k for k in gender_keys if k != article_gender]
     noun_type = gender_keys[0]
 
-    correct_noun_forms = None
+    correct_noun_forms: set = set()
     for gk in gender_keys:
         result = noun_descr.get(gk, {})
         for item in declension:
             result = result.get(item) if isinstance(result, dict) else None
         if result:
             noun_type = gk
-            correct_noun_forms = result
-            break
+            if article_gender:
+                correct_noun_forms = result if isinstance(result, set) else set(result)
+                break
+            else:
+                correct_noun_forms |= result if isinstance(result, set) else set(result)
     word_is_correct = _ci_match(noun_word, correct_noun_forms)
 
     _num = {'sg': 'Sg.', 'pl': 'Pl.'}.get(declension[0], declension[0])

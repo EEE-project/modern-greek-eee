@@ -196,7 +196,7 @@ source = { git = "https://codeberg.org/EEE-project/modern_greek_accentuation_eee
 
 [[package]]
 name = "modern-greek-eee"
-version = "0.4.2"
+version = "0.4.3"
 source = { editable = "." }
 dependencies = [
     { name = "jedi" },
