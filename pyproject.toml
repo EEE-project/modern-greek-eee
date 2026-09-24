@@ -1,11 +1,11 @@
 [project]
 name = "modern-greek-eee"
-version = "0.4.3"
+version = "0.4.4"
 description = "Greek learning tools for Marimo"
 dependencies = [
     "jedi<0.20.0",
     "marimo>=0.19.4",
-    "modern-greek-inflexion-eee @ git+https://codeberg.org/EEE-project/modern-greek-inflexion-eee.git",
+    "modern-greek-inflexion-eee>=2.1.10",
     "pandas>=2.0.0",
 ]
 

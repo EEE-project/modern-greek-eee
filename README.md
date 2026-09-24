@@ -36,7 +36,7 @@ These examples showcase the framework capabilities: built-in word samples, custo
 
 - **Python 3.12+**
 - **Marimo** (reactive notebook for Python)
-- **modern-greek-inflexion** (morphological engine)
+- **modern-greek-inflexion-eee** (morphological engine, installed from PyPI)
 
 ## Installation
 

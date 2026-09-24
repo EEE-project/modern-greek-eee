@@ -191,12 +191,16 @@ wheels = [
 
 [[package]]
 name = "modern-greek-accentuation-eee"
-version = "1.0.8"
-source = { git = "https://codeberg.org/EEE-project/modern_greek_accentuation_eee.git#8a2406fd3f2adc30a01226bb6975b6923b8549a9" }
+version = "1.0.10"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8b/74/a18fc7586a3de9ddce64c702da5c97a35d672c415ae00ea9be18a977af74/modern_greek_accentuation_eee-1.0.10.tar.gz", hash = "sha256:d934824de70aedd56aa53b2fd5a6327af23cf96c0be2cceae495a82ba6525a96", size = 18614, upload-time = "2026-07-29T11:03:23.768Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/d6/66c9de429a2770a450f709fe36de376b936d43da6d273b0ef6677307614c/modern_greek_accentuation_eee-1.0.10-py3-none-any.whl", hash = "sha256:af2b12378e5148355f46d8e63f6e1cba6db7c903032ea484ddb5941c379a5560", size = 18890, upload-time = "2026-07-29T11:03:22.422Z" },
+]
 
 [[package]]
 name = "modern-greek-eee"
-version = "0.4.3"
+version = "0.4.4"
 source = { editable = "." }
 dependencies = [
     { name = "jedi" },
@@ -214,7 +218,7 @@ dev = [
 requires-dist = [
     { name = "jedi", specifier = "<0.20.0" },
     { name = "marimo", specifier = ">=0.19.4" },
-    { name = "modern-greek-inflexion-eee", git = "https://codeberg.org/EEE-project/modern-greek-inflexion-eee.git" },
+    { name = "modern-greek-inflexion-eee", specifier = ">=2.1.10" },
     { name = "pandas", specifier = ">=2.0.0" },
 ]
 
@@ -223,10 +227,14 @@ dev = [{ name = "pytest", specifier = ">=9.0.3" }]
 
 [[package]]
 name = "modern-greek-inflexion-eee"
-version = "2.0.11"
-source = { git = "https://codeberg.org/EEE-project/modern-greek-inflexion-eee.git#1b20e83f4bc90cd48c10a6628ac4a008c6392776" }
+version = "2.1.10"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "modern-greek-accentuation-eee" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/92/30/41bd4f706c3de4532bacc9e94d1005a2513fa7c9ff1c63e22e28f5923e24/modern_greek_inflexion_eee-2.1.10.tar.gz", hash = "sha256:ea322181bd3aaafcb6de148cf0765d9f216a017ff8bfa1a73f18d0745075ee32", size = 9426866, upload-time = "2026-09-02T20:25:15.809Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/6e/febc4b2aed8a1c8d4d3dea4c5b34a31d86b752c2275f8e83d8ed2c97f107/modern_greek_inflexion_eee-2.1.10-py3-none-any.whl", hash = "sha256:e6f6a05aaf7247d81fce376b712d3163ccd3efa452923ac72a8ca298d31d7993", size = 9741963, upload-time = "2026-09-02T20:25:13.311Z" },
 ]
 
 [[package]]
